@@ -1,0 +1,1477 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>今天赚了吗</title>
+<style>
+:root{
+  --bg:#FFF4D9; --card:#FFFDF7; --ink:#1F1A13; --muted:#7A6F5F; --soft:#F3E6C6;
+  --accent:#FF5A36; --yolk:#FFC53D; --mint:#22B386; --sky:#5B8DEF; --pink:#FF8FB1;
+  --shadow:4px 4px 0 var(--ink); --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{
+  font-family:-apple-system,"PingFang SC","Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei",Roboto,sans-serif;
+  padding:0 16px calc(92px + env(safe-area-inset-bottom));min-height:100vh;
+  -webkit-user-select:none;user-select:none;overflow-x:hidden;
+}
+input{-webkit-user-select:text;user-select:text}
+button{font:inherit;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;padding:16px 0 4px}
+.brand{font-weight:900;font-size:22px;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+.brand .coin{width:26px;height:26px;border-radius:50%;background:var(--yolk);border:2.5px solid var(--ink);display:grid;place-items:center;font-size:13px;font-weight:900}
+.icon-btn{width:42px;height:42px;border-radius:14px;border:2.5px solid var(--ink);background:var(--card);box-shadow:3px 3px 0 var(--ink);font-size:19px;display:grid;place-items:center}
+.icon-btn:active,.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+/* cards */
+.card{background:var(--card);border:2.5px solid var(--ink);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin:16px 0}
+.h{font-size:26px;font-weight:900;margin:14px 0 2px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 4px}
+.status-row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:14px;color:var(--muted);font-weight:600}
+.chip{background:var(--ink);color:var(--yolk);padding:5px 11px;border-radius:99px;font-size:13px;font-weight:800;white-space:nowrap}
+
+/* hero */
+.hero{background:var(--yolk);position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-28px;top:-28px;width:110px;height:110px;border-radius:50%;border:2.5px dashed rgba(31,26,19,.25)}
+.hero-label{font-weight:800;font-size:15px}
+.money{font-weight:900;font-size:clamp(50px,17vw,78px);line-height:1.05;letter-spacing:-1.5px;margin:6px 0 8px;white-space:nowrap;transition:transform .12s}
+.money .cur{font-size:.42em;margin-right:4px;vertical-align:.62em;letter-spacing:0}
+.money .dec{font-size:.55em;letter-spacing:-.5px}
+.money.bump{transform:scale(1.035)}
+.money.dim{opacity:.35}
+.rate{font-size:14px;font-weight:600;display:flex;flex-wrap:wrap;gap:6px 14px}
+.rate b{font-weight:900}
+
+/* countdown */
+.cd-label{font-weight:800;font-size:15px;color:var(--muted)}
+.cd-time{font-weight:900;font-size:44px;letter-spacing:-.5px;margin:2px 0 14px}
+.bar{position:relative;height:22px;border:2.5px solid var(--ink);border-radius:99px;background:var(--soft);overflow:visible}
+.bar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--accent);width:0;transition:width .4s}
+.bar-mark{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--card);border:2.5px solid var(--ink)}
+.bar-mark.passed{background:var(--ink)}
+.bar-top{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--muted);margin-bottom:6px}
+.bar-top b{color:var(--ink);font-weight:900}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:13px;font-weight:700;color:var(--muted)}
+.legend .done{color:var(--ink);text-decoration:line-through;text-decoration-thickness:2px}
+.friday-banner{margin-top:12px;background:var(--ink);color:#fff;border-radius:12px;padding:9px 12px;font-weight:800;font-size:14px}
+body.friday .bar-fill{background:linear-gradient(90deg,#FF5A36,#FFC53D,#22B386,#5B8DEF,#FF8FB1,#FF5A36);background-size:300% 100%;animation:rainbow 2.5s linear infinite}
+@keyframes rainbow{to{background-position:300% 0}}
+
+/* conversion */
+.convert-head{display:flex;align-items:baseline;gap:6px;font-weight:800;font-size:15px}
+.convert-head b{font-size:34px;font-weight:900;color:var(--accent)}
+.cups{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 6px;font-size:26px;line-height:1}
+.cups .ghost{opacity:.18;filter:grayscale(1)}
+.cups .more{font-size:15px;font-weight:900;align-self:center;margin-left:4px}
+.next{font-size:13px;color:var(--muted);font-weight:600}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+.grid2 .card{margin:0}
+.mini{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--muted)}
+.mini b{font-size:24px;font-weight:900;color:var(--ink)}
+.mini small{font-size:12px}
+.mini.fishy{background:#DDF3EA}
+.mini.pay{background:#E3EBFF}
+
+.ot{background:#FFE4DC}
+.ot-head{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:16px}
+.ot-head b{font-size:22px}
+.ot p{font-size:14px;font-weight:600;margin:8px 0 12px;line-height:1.5}
+
+.welcome{background:var(--ink);color:#fff}
+.welcome p{margin:0 0 12px;font-size:14px;line-height:1.55;font-weight:600}
+.welcome .row-btns{display:flex;gap:10px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:2.5px solid var(--ink);border-radius:14px;background:var(--card);box-shadow:3px 3px 0 var(--ink);padding:11px 16px;font-weight:900;font-size:15px}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.yolk{background:var(--yolk)}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;box-shadow:none;border-style:dashed;font-weight:700;color:var(--muted)}
+.welcome .btn{border-color:#fff;box-shadow:3px 3px 0 #fff}
+.welcome .btn.plain{background:transparent;color:#fff}
+
+/* fish */
+.fish-picks{display:grid;gap:14px;margin:16px 0}
+.fish-pick{display:flex;align-items:center;gap:14px;text-align:left;border:2.5px solid var(--ink);border-radius:var(--r);box-shadow:var(--shadow);background:var(--card);padding:16px}
+.fish-pick:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.fish-pick .e{font-size:38px;width:56px;height:56px;display:grid;place-items:center;border-radius:16px;border:2.5px solid var(--ink)}
+.fish-pick:nth-child(1) .e{background:#DDF3EA}
+.fish-pick:nth-child(2) .e{background:#E3EBFF}
+.fish-pick:nth-child(3) .e{background:#FFE4F0}
+.fish-pick .t{font-size:19px;font-weight:900}
+.fish-pick .d{font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
+.fish-live{background:var(--mint);color:#fff;text-align:center;padding:22px 16px}
+.fish-live .e{font-size:58px;line-height:1;animation:wobble 1.6s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.fish-live .t{font-weight:900;font-size:18px;margin-top:8px}
+.fish-live .timer{font-weight:900;font-size:52px;margin:4px 0}
+.fish-live .earn{font-size:15px;font-weight:700;margin-bottom:16px}
+.fish-live .earn b{font-size:22px}
+.fish-live .btn{color:var(--ink)}
+.list{margin:0;padding:0;list-style:none}
+.list li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:2px dashed var(--soft);font-size:14px;font-weight:700}
+.list li:last-child{border-bottom:0}
+.list .e{font-size:22px}
+.list .grow{flex:1}
+.list .when{color:var(--muted);font-weight:600;font-size:12px}
+.list .amt{font-weight:900}
+.empty{color:var(--muted);font-size:14px;font-weight:600;padding:6px 0}
+.sec-title{font-weight:900;font-size:17px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}
+.sec-title small{font-size:12px;color:var(--muted);font-weight:700}
+.report{background:#FFF0B8}
+.report .big{font-size:34px;font-weight:900;margin:2px 0 10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats div{background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:8px;text-align:center;font-size:12px;font-weight:700;color:var(--muted)}
+.stats b{display:block;font-size:17px;color:var(--ink);font-weight:900;margin-top:2px}
+.report p{font-size:14px;font-weight:700;margin:12px 0 0;line-height:1.5}
+
+/* rich */
+.rich-hero{background:var(--ink);color:#fff}
+.rich-hero .hero-label{color:var(--yolk)}
+.rich-hero .money{font-size:clamp(40px,13vw,60px);color:var(--yolk)}
+.rich-hero .full{font-size:12px;opacity:.7;font-weight:600;word-break:break-all}
+.rich-msg{margin-top:12px;font-weight:800;font-size:15px;line-height:1.45}
+.rich-msg b{color:var(--yolk)}
+.item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:2px dashed var(--soft)}
+.item:last-child{border-bottom:0}
+.item .e{font-size:30px;width:46px;height:46px;display:grid;place-items:center;background:var(--soft);border-radius:14px;flex-shrink:0}
+.item .info{flex:1;min-width:0}
+.item .name{font-weight:800;font-size:15px;line-height:1.3}
+.item .price{font-size:13px;color:var(--accent);font-weight:900;margin-top:2px}
+.qty{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.qty button{width:34px;height:34px;border-radius:11px;border:2.5px solid var(--ink);background:var(--card);font-weight:900;font-size:18px;line-height:1;box-shadow:2px 2px 0 var(--ink)}
+.qty button.buy{background:var(--yolk)}
+.qty button:active{transform:translate(2px,2px);box-shadow:none}
+.qty button:disabled{opacity:.3;box-shadow:none}
+.qty span{min-width:24px;text-align:center;font-weight:900;font-size:16px}
+
+/* settings */
+.form .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:2px dashed var(--soft);font-weight:700;font-size:15px}
+.form .row:last-of-type{border-bottom:0}
+.form .row.col{flex-direction:column;align-items:flex-start}
+.form input[type=number],.form input[type=time],.form input[type=text],.form input:not([type]){width:150px;min-width:0;border:2.5px solid var(--ink);border-radius:12px;padding:8px 10px;font:inherit;font-weight:800;font-size:16px;background:#fff;color:var(--ink);text-align:right}
+.form input[type=time]{text-align:center;padding:8px 6px}
+#f-richAsset,#f-salary{width:170px}
+.form .row span{flex-shrink:0}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch i{width:54px;height:32px;border-radius:99px;border:2.5px solid var(--ink);background:var(--soft);position:relative;flex-shrink:0;transition:background .15s}
+.switch i::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:var(--card);border:2.5px solid var(--ink);transition:left .15s}
+.switch input:checked + i{background:var(--mint)}
+.switch input:checked + i::after{left:24px}
+.days{display:flex;gap:6px;width:100%}
+.days button{flex:1;height:40px;border-radius:12px;border:2.5px solid var(--ink);background:var(--card);font-weight:900}
+.days button.on{background:var(--ink);color:var(--yolk)}
+.hint{font-size:12.5px;color:var(--muted);font-weight:600;margin:8px 0 0;line-height:1.5}
+.warn{font-size:13px;color:var(--accent);font-weight:800;margin:8px 0 0}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.presets button{border:2px solid var(--ink);border-radius:99px;background:var(--card);padding:6px 11px;font-weight:800;font-size:13px}
+.danger{display:grid;gap:10px;margin:18px 0}
+.foot{text-align:center;color:var(--muted);font-size:12px;font-weight:600}
+
+/* wish jar */
+.jar-card{background:#FFE9F0}
+.jar-top{display:flex;gap:16px;align-items:center}
+.jar{width:88px;flex-shrink:0;display:flex;flex-direction:column;align-items:center}
+.jar-lid{width:58px;height:13px;border:2.5px solid var(--ink);border-radius:7px 7px 3px 3px;background:var(--accent);margin-bottom:-2.5px;position:relative;z-index:1}
+.jar-body{position:relative;width:88px;height:108px;border:2.5px solid var(--ink);border-radius:20px 20px 28px 28px;background:rgba(255,255,255,.75);overflow:hidden}
+.jar-fill{position:absolute;left:0;right:0;bottom:0;height:0;background:var(--yolk);box-shadow:inset 0 2.5px 0 var(--ink);transition:height .6s}
+.jar-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:42px}
+.jar-info{flex:1;min-width:0}
+.jar-label{font-size:13px;font-weight:800;color:var(--muted)}
+.jar-name{font-weight:900;font-size:20px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jar-amt{font-weight:900;font-size:clamp(30px,10vw,40px);letter-spacing:-.5px;line-height:1.1;margin-top:6px;white-space:nowrap;transition:transform .12s;transform-origin:left center}
+.jar-amt small{font-size:.55em}
+.jar-amt.bump{transform:scale(1.04)}
+.jar-of{font-size:13px;font-weight:800;color:var(--muted);margin-top:2px}
+.facts{margin-top:16px;display:grid;gap:8px}
+.facts div{background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:9px 11px;font-size:14px;font-weight:700;line-height:1.5}
+.facts b{font-weight:900}
+.jar-rate{margin-top:12px;font-size:12.5px;font-weight:700;color:var(--muted);text-align:right}
+#jarClaim{margin-top:14px;font-size:17px;padding:14px}
+.jar-empty{text-align:center;padding:6px 4px}
+.jar-empty .e{font-size:54px;line-height:1}
+.jar-empty h3{font-size:20px;font-weight:900;margin:10px 0 6px}
+.jar-empty p{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 16px;line-height:1.55}
+.skip-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.skip-grid button{border:2.5px solid var(--ink);border-radius:14px;background:var(--card);box-shadow:3px 3px 0 var(--ink);padding:10px;font-weight:900;font-size:15px;display:flex;align-items:center;gap:8px;text-align:left}
+.skip-grid button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.skip-grid .e{font-size:26px}
+.skip-grid small{display:block;color:var(--mint);font-size:12.5px;font-weight:900}
+.skip-custom{display:flex;gap:10px;margin-top:12px}
+.skip-custom input{flex:1;min-width:0;border:2.5px solid var(--ink);border-radius:12px;padding:10px 12px;font:inherit;font-weight:800;font-size:16px;background:#fff;color:var(--ink)}
+.list .undo{border:2px solid var(--soft);background:none;border-radius:10px;padding:4px 8px;font-size:12px;font-weight:800;color:var(--muted)}
+.list .tag{font-style:normal;font-size:11px;background:var(--accent);color:#fff;border-radius:99px;padding:2px 7px;margin-left:4px;vertical-align:2px}
+.list .more-btn{font-size:20px;color:var(--muted);padding:0 4px}
+.list li[data-act]{cursor:pointer}
+.checker-input{display:flex;align-items:center;gap:8px;border:2.5px solid var(--ink);border-radius:14px;background:#fff;padding:4px 14px}
+.checker-input span{font-weight:900;font-size:24px}
+.checker-input input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-weight:900;font-size:28px;padding:6px 0;background:transparent;color:var(--ink)}
+.chk-result{margin:12px 0 12px;font-size:14.5px;font-weight:700;line-height:1.7;color:var(--muted)}
+.chk-result b{color:var(--ink)}
+.chk-result .big{font-size:32px;font-weight:900;color:var(--accent)}
+.rate-chips{display:flex;gap:8px;margin-top:12px}
+.rate-chips button{flex:1;height:42px;border-radius:12px;border:2.5px solid var(--ink);background:var(--card);font-weight:900;font-size:15px}
+.rate-chips button.on{background:var(--ink);color:var(--yolk)}
+.rate-text{font-size:14px;font-weight:700;margin:0;line-height:1.55}
+.rate-text b{font-weight:900}
+.wish-mini{background:#FFE9F0;cursor:pointer}
+.wm-cta{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px}
+.wm-cta .e{font-size:28px}
+.wm-cta span{flex:1}
+.wm-cta b{font-size:24px}
+.wm-top{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:14px;color:var(--muted)}
+.wm-top b{color:var(--ink);font-weight:900}
+.wm-top .num{font-size:20px}
+.wm-bar{height:16px;border:2.5px solid var(--ink);border-radius:99px;background:var(--card);margin:10px 0 8px;overflow:hidden}
+.wm-bar i{display:block;height:100%;width:0;background:var(--yolk);transition:width .6s}
+.wm-note{font-size:13px;font-weight:700;color:var(--muted)}
+/* sheet forms */
+.field{display:block;width:100%;border:2.5px solid var(--ink);border-radius:12px;padding:11px 12px;font:inherit;font-weight:800;font-size:16px;background:#fff;color:var(--ink);margin-bottom:10px;outline:0}
+.money-field{display:flex;align-items:center;gap:6px;padding:3px 12px}
+.money-field span{font-weight:900;font-size:18px}
+.money-field input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-weight:800;font-size:16px;padding:8px 0;background:transparent;color:var(--ink)}
+.emoji-pick{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:4px 0 14px}
+.emoji-pick button{height:42px;border-radius:12px;border:2px solid var(--soft);background:var(--card);font-size:22px;padding:0}
+.emoji-pick button.on{border-color:var(--ink);background:var(--yolk)}
+.stack{display:grid;gap:10px}
+/* certificate */
+.sheet.cert-sheet{max-width:390px;background:none;border:0;box-shadow:none;padding:0}
+.cert{position:relative;background:#FFFBEF;border:2.5px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink);padding:24px 22px 22px;text-align:left;overflow:hidden}
+.cert::before{content:"";position:absolute;inset:8px;border:1.5px dashed #E3C98F;border-radius:12px;pointer-events:none}
+.cert-title{text-align:center;font-size:28px;font-weight:900;letter-spacing:6px;margin-right:-6px}
+.cert-no{text-align:center;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px;margin-top:2px}
+.cert-lead{text-align:center;font-size:14px;font-weight:700;color:var(--muted);margin-top:18px}
+.cert-item{text-align:center;font-size:24px;font-weight:900;line-height:1.3}
+.cert-item .e{display:block;font-size:50px;line-height:1.2}
+.cert-price{text-align:center;font-weight:900;color:var(--accent);font-size:20px;margin-top:2px}
+.cert-rows{margin:16px 0 12px;border-top:2px solid var(--ink);padding-top:12px;display:grid;gap:7px;font-size:14px;font-weight:700}
+.cert-sign{font-size:14px;font-weight:800;line-height:1.75;margin-bottom:66px}
+.stamp{position:absolute;right:24px;bottom:20px;width:92px;height:92px;border:4px solid #E5322D;border-radius:50%;color:#E5322D;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-16deg);opacity:.85;mix-blend-mode:multiply;animation:stamp .45s cubic-bezier(.3,1.6,.5,1) .15s both}
+.stamp::before{content:"";position:absolute;inset:5px;border:1.5px solid #E5322D;border-radius:50%}
+.stamp b{font-size:26px;font-weight:900;letter-spacing:2px;line-height:1}
+.stamp i{font-style:normal;font-size:8px;font-weight:800;margin-top:3px}
+@keyframes stamp{from{transform:rotate(-16deg) scale(2.2);opacity:0}}
+.cert-btns{display:flex;gap:10px;margin-top:16px}
+.cert-btns .btn{flex:1}
+/* tabbar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:2.5px solid var(--ink);display:flex;gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.tabbar button{flex:1;border:2.5px solid transparent;background:none;border-radius:14px;padding:5px 0 4px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;font-weight:800;color:var(--muted)}
+.tabbar button span{font-size:21px;line-height:1.15;filter:grayscale(1);opacity:.6}
+.tabbar button.on{background:var(--yolk);border-color:var(--ink);color:var(--ink)}
+.tabbar button.on span{filter:none;opacity:1}
+
+/* modal + toast */
+.modal{position:fixed;inset:0;z-index:40;background:rgba(31,26,19,.55);display:flex;align-items:flex-start;justify-content:center;padding:24px 20px;overflow-y:auto}
+.sheet{margin:auto;width:100%;max-width:380px;background:var(--card);border:2.5px solid var(--ink);border-radius:22px;box-shadow:6px 6px 0 var(--ink);padding:24px 20px 20px;text-align:center;animation:pop .25s cubic-bezier(.2,1.4,.5,1)}
+@keyframes pop{from{transform:scale(.85);opacity:0}}
+.sheet .e{font-size:56px;line-height:1}
+.sheet h3{font-size:21px;font-weight:900;margin:10px 0 8px;line-height:1.35}
+.sheet p{font-size:15px;font-weight:600;color:var(--muted);margin:0 0 18px;line-height:1.55}
+.sheet .btns{display:flex;gap:10px}
+.sheet .btns .btn{flex:1}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;z-index:50;background:var(--ink);color:#fff;font-weight:800;font-size:14px;padding:11px 16px;border-radius:14px;max-width:calc(100% - 40px);text-align:center;transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.confetti{position:fixed;top:-40px;z-index:60;pointer-events:none;font-size:24px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="coin">¥</span>今天赚了吗</div>
+  <button class="icon-btn" id="eyeBtn" aria-label="隐藏金额">👀</button>
+</header>
+
+<main>
+<!-- ============ 今日 ============ -->
+<section class="page" id="page-today">
+  <div class="status-row"><span id="dateLabel"></span><span class="chip" id="statusChip"></span></div>
+
+  <div class="card welcome hidden" id="welcome">
+    <p>👋 现在用的是示例工资（月薪 1 万）。去设置里换成你自己的，跳动的才是你的钱。</p>
+    <div class="row-btns">
+      <button class="btn yolk" id="goSettings">去设置</button>
+      <button class="btn plain" id="dismissWelcome">先看看</button>
+    </div>
+  </div>
+
+  <div class="card hero">
+    <div class="hero-label" id="heroLabel">今天已挣</div>
+    <div class="money num" id="money"><span class="cur">¥</span><span id="moneyInt">0</span><span class="dec" id="moneyDec">.00</span></div>
+    <div class="rate" id="rateLine"></div>
+  </div>
+
+  <div class="card" id="cdCard">
+    <div class="cd-label" id="cdLabel">距离下班还有</div>
+    <div class="cd-time num" id="cdTime">00:00:00</div>
+    <div id="barWrap">
+      <div class="bar-top"><span>今日进度</span><b class="num" id="barPct"></b></div>
+      <div class="bar" id="bar"><div class="bar-fill" id="barFill"></div></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="friday-banner hidden" id="fridayBanner">🎉 周五下午！坚持住，周末已经在门口了</div>
+  </div>
+
+  <div class="card">
+    <div class="convert-head"><span>今天已挣</span><b class="num" id="unitCount">0</b><span id="unitLabel">杯奶茶</span></div>
+    <div class="cups" id="cups"></div>
+    <div class="next" id="unitNext"></div>
+  </div>
+
+  <div class="card wish-mini" id="wishMini">
+    <div class="wm-cta" id="wmCta"><span class="e">🐷</span><span>想买点什么？许个愿望，让工资帮你一秒一秒攒</span><b>›</b></div>
+    <div class="hidden" id="wmBox">
+      <div class="wm-top"><span>🐷 正在攒 <b id="wmName"></b></span><b class="num" id="wmPct"></b></div>
+      <div class="wm-bar"><i id="wmFill"></i></div>
+      <div class="wm-note num" id="wmNote"></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card mini fishy" id="fishMini">🐟 今日摸鱼<b class="num" id="fishMiniTime">0 分钟</b><small id="fishMiniMoney">公司支付 ¥0.00</small></div>
+    <div class="card mini pay" id="payMini">📅 距离发薪<b class="num" id="payDays">-</b><small id="payNote"></small></div>
+  </div>
+
+  <div class="card ot hidden" id="otCard">
+    <div class="ot-head"><span>😮‍💨 加班记录</span><b class="num" id="otTimer"></b></div>
+    <p id="otText"></p>
+    <button class="btn block" id="otBtn">我还在加班</button>
+  </div>
+</section>
+
+<!-- ============ 摸鱼 ============ -->
+<section class="page hidden" id="page-fish">
+  <h2 class="h">带薪摸鱼</h2>
+  <p class="sub">摸鱼的每一秒，都是老板在付钱。</p>
+
+  <div id="fishIdle">
+    <div class="fish-picks">
+      <button class="fish-pick" data-cat="toilet"><span class="e">🚽</span><span><div class="t">带薪如厕</div><div class="d">打工人最理直气壮的休息</div></span></button>
+      <button class="fish-pick" data-cat="phone"><span class="e">📱</span><span><div class="t">刷手机</div><div class="d">就看一眼，真的就一眼</div></span></button>
+      <button class="fish-pick" data-cat="daze"><span class="e">💭</span><span><div class="t">放空发呆</div><div class="d">表面在思考，其实在关机</div></span></button>
+    </div>
+  </div>
+
+  <div class="card fish-live hidden" id="fishLive">
+    <div class="e" id="fishLiveEmoji">🚽</div>
+    <div class="t" id="fishLiveName">带薪如厕中</div>
+    <div class="timer num" id="fishLiveTimer">00:00</div>
+    <div class="earn" id="fishLiveEarn">公司正在为你支付 <b class="num">¥0.00</b></div>
+    <button class="btn block" id="fishStop">摸完了，回去搬砖</button>
+  </div>
+
+  <div class="card">
+    <div class="sec-title">今日记录<small id="fishTodaySum"></small></div>
+    <ul class="list" id="fishTodayList"></ul>
+  </div>
+
+  <div class="card report">
+    <div class="sec-title">本月摸鱼报告<small id="reportMonth"></small></div>
+    <div id="reportBody"></div>
+  </div>
+</section>
+
+<!-- ============ 愿望 ============ -->
+<section class="page hidden" id="page-wish">
+  <h2 class="h">愿望存钱罐</h2>
+  <p class="sub">每上一秒班，罐子就涨一点。</p>
+
+  <div class="card jar-card" id="jarCard"></div>
+
+  <div class="card hidden" id="skipCard">
+    <div class="sec-title">💪 忍住了<small id="skipToday"></small></div>
+    <div class="skip-grid" id="skipGrid"></div>
+    <div class="skip-custom"><input id="skipAmt" type="number" inputmode="decimal" min="0" placeholder="忍住了别的？输入金额"><button class="btn" id="skipCustom">存进去</button></div>
+    <ul class="list" id="depositList"></ul>
+  </div>
+
+  <div class="card">
+    <div class="sec-title">🏷️ 这个值几小时班？</div>
+    <div class="checker-input"><span>¥</span><input id="chkPrice" type="number" inputmode="decimal" min="0" placeholder="输入任意价格"></div>
+    <div class="chk-result" id="chkResult"></div>
+    <button class="btn block yolk hidden" id="chkAdd">把它加进愿望清单</button>
+  </div>
+
+  <div class="card">
+    <div class="sec-title">📋 愿望清单<small>点一下可以调整</small></div>
+    <ul class="list" id="queueList"></ul>
+    <button class="btn block ghost" data-act="add" style="margin-top:8px">＋ 许个新愿望</button>
+  </div>
+
+  <div class="card">
+    <div class="sec-title">🐷 存钱比例</div>
+    <p class="rate-text" id="rateText"></p>
+    <div class="rate-chips" id="rateChips"></div>
+    <p class="hint">这是心理账户，用来给攒钱找点感觉，不会动你真实的钱。</p>
+  </div>
+
+  <div class="card hidden" id="wallCard">
+    <div class="sec-title">🏆 愿望墙<small>点一下看批准书</small></div>
+    <ul class="list" id="wallList"></ul>
+  </div>
+</section>
+
+<!-- ============ 首富 ============ -->
+<section class="page hidden" id="page-rich">
+  <h2 class="h">首富的一天</h2>
+  <p class="sub">今天这些钱都是你的。可劲儿花，看看能花掉多少。</p>
+
+  <div class="card rich-hero">
+    <div class="hero-label">余额</div>
+    <div class="money num" id="richBalance">¥0</div>
+    <div class="full num" id="richFull"></div>
+    <div class="rich-msg" id="richMsg"></div>
+  </div>
+
+  <div class="card">
+    <div class="sec-title">购物清单<small>点 + 就买，不用看价格</small></div>
+    <div id="richList"></div>
+  </div>
+
+  <button class="btn block" id="richReset">一觉醒来，重新当首富</button>
+</section>
+
+<!-- ============ 设置 ============ -->
+<section class="page hidden" id="page-settings">
+  <h2 class="h">设置</h2>
+  <p class="sub">改完自动保存。数据只存在这台手机上。</p>
+
+  <div class="card form">
+    <div class="sec-title">💰 工资</div>
+    <label class="row"><span>月薪（元）</span><input id="f-salary" type="number" inputmode="decimal" min="0"></label>
+    <label class="row"><span>每月计薪天数</span><input id="f-payDays" type="number" inputmode="decimal" step="0.01" min="1"></label>
+    <label class="row"><span>每月发薪日</span><input id="f-payday" type="number" inputmode="numeric" min="1" max="31"></label>
+    <p class="hint">计薪天数默认 21.75 天，是国内常用的月计薪天数，可以按你公司的实际情况改。</p>
+  </div>
+
+  <div class="card form">
+    <div class="sec-title">⏰ 上班时间</div>
+    <label class="row"><span>上班</span><input id="f-start" type="time"></label>
+    <label class="row"><span>下班</span><input id="f-end" type="time"></label>
+    <label class="row"><span>午休开始</span><input id="f-lunchStart" type="time"></label>
+    <label class="row"><span>午休结束</span><input id="f-lunchEnd" type="time"></label>
+    <label class="row switch"><span>午休也算工资</span><input id="f-lunchPaid" type="checkbox"><i></i></label>
+    <div class="row col"><span>工作日</span><div class="days" id="f-days"></div></div>
+    <p class="warn hidden" id="timeWarn"></p>
+  </div>
+
+  <div class="card form">
+    <div class="sec-title">🧋 收入换算成</div>
+    <label class="row"><span>图标</span><input id="f-unitEmoji" type="text"></label>
+    <label class="row"><span>名称</span><input id="f-unitName" type="text"></label>
+    <label class="row"><span>量词</span><input id="f-unitWord" type="text"></label>
+    <label class="row"><span>单价（元）</span><input id="f-unitPrice" type="number" inputmode="decimal" min="0.01"></label>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="card form">
+    <div class="sec-title">👑 首富的一天</div>
+    <label class="row"><span>首富资产（元）</span><input id="f-richAsset" type="number" inputmode="numeric" min="1"></label>
+    <p class="hint">默认 3 万亿元是示例金额。首富的身家每天都在变，录视频前可以改成你查到的最新数字。</p>
+  </div>
+
+  <div class="card form">
+    <div class="sec-title">🐷 愿望存钱罐</div>
+    <label class="row"><span>攒钱比例（%）</span><input id="f-saveRate" type="number" inputmode="numeric" min="0" max="100"></label>
+    <p class="hint">每秒工资里有这么多会自动进罐子，填 0 就暂停。</p>
+  </div>
+
+  <div class="card form">
+    <div class="sec-title">🔔 其他</div>
+    <label class="row switch"><span>声音和振动</span><input id="f-sound" type="checkbox"><i></i></label>
+    <label class="row switch"><span>隐藏金额</span><input id="f-hidden" type="checkbox"><i></i></label>
+  </div>
+
+  <div class="danger">
+    <button class="btn ghost" id="clearRecords">清空摸鱼和加班记录</button>
+    <button class="btn ghost" id="clearWishes">清空愿望和存钱罐</button>
+    <button class="btn ghost" id="resetSettings">恢复默认设置</button>
+  </div>
+  <p class="foot">今天赚了吗 · v1.1</p>
+</section>
+</main>
+
+<nav class="tabbar">
+  <button data-tab="today" class="on"><span>💰</span>今日</button>
+  <button data-tab="fish"><span>🐟</span>摸鱼</button>
+  <button data-tab="wish"><span>🐷</span>愿望</button>
+  <button data-tab="rich"><span>👑</span>首富</button>
+  <button data-tab="settings"><span>⚙️</span>设置</button>
+</nav>
+
+<div class="modal hidden" id="modal"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- storage ---------- */
+const mem = {};
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : (k in mem ? mem[k] : d); }catch(e){ return k in mem ? mem[k] : d; } },
+  set(k, v){ mem[k] = v; try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+const DEFAULTS = {
+  salary:10000, payDays:21.75, payday:15,
+  start:'09:00', end:'18:00', lunchStart:'12:00', lunchEnd:'13:00', lunchPaid:false,
+  days:[1,2,3,4,5],
+  unitEmoji:'🧋', unitName:'奶茶', unitWord:'杯', unitPrice:20,
+  richAsset:3000000000000, sound:true, hidden:false, saveRate:20
+};
+let S = Object.assign({}, DEFAULTS, store.get('settings', {}));
+let D = Object.assign({ fish:[], fishActive:null, ot:{active:null, log:{}}, rich:{}, wishes:[], wall:[], deposits:[], jar:null }, store.get('data', {}));
+if(!D.ot) D.ot = {active:null, log:{}};
+const saveS = () => store.set('settings', S);
+const saveD = () => store.set('data', D);
+
+const $ = id => document.getElementById(id);
+
+/* ---------- formatting ---------- */
+const fix = (n, d=2) => Number(n).toLocaleString('zh-CN', {minimumFractionDigits:d, maximumFractionDigits:d});
+const yuan = n => '¥' + fix(n);
+const masked = s => S.hidden ? '¥***' : s;
+const pad = x => String(x).padStart(2, '0');
+function clock(sec, forceH){
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60;
+  return (h || forceH ? pad(h)+':' : '') + pad(m) + ':' + pad(s);
+}
+function dur(sec){
+  sec = Math.floor(sec);
+  if(sec < 60) return sec + ' 秒';
+  const m = Math.floor(sec/60);
+  if(m < 60) return m + ' 分钟';
+  const h = Math.floor(m/60), mm = m%60;
+  return h + ' 小时' + (mm ? ' ' + mm + ' 分钟' : '');
+}
+function durShort(sec){
+  sec = Math.floor(sec);
+  if(sec < 60) return sec + ' 秒';
+  const m = Math.floor(sec/60), s = sec%60;
+  return m < 60 ? m + ' 分 ' + s + ' 秒' : dur(sec);
+}
+function big(n){
+  const a = Math.abs(n), t = (v) => v.toFixed(2).replace(/\.?0+$/, '');
+  if(a >= 1e12) return t(n/1e12) + ' 万亿';
+  if(a >= 1e8) return t(n/1e8) + ' 亿';
+  if(a >= 1e4) return t(n/1e4) + ' 万';
+  return fix(n, 0);
+}
+const dateKey = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+const hhmm = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const WEEK = ['日','一','二','三','四','五','六'];
+
+/* ---------- salary math ---------- */
+const hm = s => { const [h, m] = String(s).split(':').map(Number); return h*3600 + m*60; };
+const dayStart = t => { const d = new Date(t); d.setHours(0,0,0,0); return d; };
+const isWorkday = d => S.days.includes(d.getDay());
+const secOfDay = d => d.getHours()*3600 + d.getMinutes()*60 + d.getSeconds() + d.getMilliseconds()/1000;
+function lunchValid(){
+  const s = hm(S.start), e = hm(S.end), ls = hm(S.lunchStart), le = hm(S.lunchEnd);
+  return ls >= s && le <= e && le > ls;
+}
+function paidIntervals(){
+  const s = hm(S.start), e = hm(S.end);
+  if(!S.lunchPaid && lunchValid()) return [[s, hm(S.lunchStart)], [hm(S.lunchEnd), e]];
+  return [[s, e]];
+}
+const paidSecPerDay = () => paidIntervals().reduce((a, [x, y]) => a + (y - x), 0);
+const dailyPay = () => S.salary / S.payDays;
+const perSecond = () => dailyPay() / paidSecPerDay();
+function paidSecondsBetween(t0, t1){
+  if(t1 <= t0) return 0;
+  let total = 0, d = dayStart(t0);
+  while(d.getTime() < t1){
+    if(isWorkday(d)){
+      const base = d.getTime();
+      for(const [a, b] of paidIntervals()){
+        const s = Math.max(t0, base + a*1000), e = Math.min(t1, base + b*1000);
+        if(e > s) total += (e - s)/1000;
+      }
+    }
+    d = new Date(d); d.setDate(d.getDate() + 1);
+  }
+  return total;
+}
+const earnedToday = now => paidSecondsBetween(dayStart(now).getTime(), now.getTime()) * perSecond();
+function status(now){
+  if(!isWorkday(now)) return 'off';
+  const sec = secOfDay(now), s = hm(S.start), e = hm(S.end);
+  if(sec < s) return 'before';
+  if(sec >= e) return 'after';
+  if(lunchValid() && sec >= hm(S.lunchStart) && sec < hm(S.lunchEnd)) return S.lunchPaid ? 'lunchPaid' : 'lunch';
+  return 'work';
+}
+function daysToPayday(now){
+  const dim = (y, m) => new Date(y, m+1, 0).getDate();
+  const y = now.getFullYear(), m = now.getMonth(), today = dayStart(now);
+  let target = new Date(y, m, Math.min(S.payday, dim(y, m)));
+  if(target < today) target = new Date(y, m+1, Math.min(S.payday, dim(y, m+1)));
+  return Math.round((target - today) / 86400000);
+}
+function milestones(){
+  const s = hm(S.start), e = hm(S.end), list = [];
+  if(lunchValid()) list.push({t:hm(S.lunchStart), e:'🍚', label:'午饭', msg:'🍚 开饭了！吃饭最重要'});
+  const five = 17*3600;
+  if(five > s && five < e && e - five >= 1800) list.push({t:five, e:'🕔', label:'5 点', msg:'🕔 5 点了，进入下班读秒阶段'});
+  list.push({t:e, e:'🏃', label:'下班', msg:null});
+  return list;
+}
+
+/* ---------- feedback: sound, toast, modal, confetti ---------- */
+let ac = null;
+function unlockAudio(){
+  try{ ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if(ac.state === 'suspended') ac.resume(); }catch(e){}
+}
+document.addEventListener('pointerdown', unlockAudio, {once:false, passive:true});
+function ding(){
+  if(!S.sound) return;
+  try{
+    unlockAudio(); if(!ac) return;
+    const t = ac.currentTime;
+    [1318.5, 1760].forEach((f, i) => {
+      const o = ac.createOscillator(), g = ac.createGain(), st = t + i*0.09;
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, st);
+      g.gain.exponentialRampToValueAtTime(0.28, st + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, st + 0.5);
+      o.connect(g); g.connect(ac.destination); o.start(st); o.stop(st + 0.55);
+    });
+  }catch(e){}
+  try{ navigator.vibrate && navigator.vibrate(40); }catch(e){}
+}
+let toastTimer;
+function toast(msg){
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+function openSheet(html, cls = 'sheet'){
+  const sh = $('sheet'); sh.className = cls; sh.innerHTML = html;
+  $('modal').classList.remove('hidden'); $('modal').scrollTop = 0;
+  const close = () => $('modal').classList.add('hidden');
+  $('modal').onclick = e => { if(e.target === $('modal')) close(); };
+  return close;
+}
+function modal({emoji='', title='', text='', ok='好的', cancel=null, onOk=null}){
+  const close = openSheet(`<div class="e">${emoji}</div><h3>${title}</h3>${text ? `<p>${text}</p>` : ''}
+     <div class="btns">${cancel ? `<button class="btn" id="mCancel">${cancel}</button>` : ''}<button class="btn primary" id="mOk">${ok}</button></div>`);
+  $('mOk').onclick = () => { close(); onOk && onOk(); };
+  if(cancel) $('mCancel').onclick = close;
+}
+function confetti(set = ['🎉','💸','✨','🧧','🪙'], n = 28){
+  for(let i = 0; i < n; i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.textContent = set[i % set.length];
+    c.style.left = Math.random()*100 + 'vw';
+    c.style.animationDuration = (1.6 + Math.random()*1.4) + 's';
+    c.style.animationDelay = (Math.random()*0.5) + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3600);
+  }
+}
+
+/* ---------- navigation ---------- */
+let current = 'today';
+function showTab(tab){
+  current = tab;
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('hidden', p.id !== 'page-' + tab));
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  window.scrollTo(0, 0);
+  if(tab === 'fish') renderFish();
+  if(tab === 'rich') renderRich();
+  if(tab === 'wish') renderWish();
+  if(tab === 'settings') fillForm();
+  tick(true);
+}
+function go(tab){
+  if(tab === current) return;
+  if(current === 'today'){ history.pushState({tab}, '', '#' + tab); showTab(tab); }
+  else if(tab === 'today'){ history.back(); }
+  else { history.replaceState({tab}, '', '#' + tab); showTab(tab); }
+}
+window.addEventListener('popstate', () => {
+  if(!$('modal').classList.contains('hidden')) $('modal').classList.add('hidden');
+  showTab((location.hash || '#today').slice(1) || 'today');
+});
+document.querySelectorAll('.tabbar button').forEach(b => b.onclick = () => go(b.dataset.tab));
+
+/* ---------- 今日 ---------- */
+const STATUS = {
+  work:     {chip:'搬砖中 💪',    hero:'今天已挣'},
+  lunch:    {chip:'午休中 🍚',    hero:'今天已挣（午休不计薪）'},
+  lunchPaid:{chip:'带薪午休 😋',  hero:'今天已挣（午休照样涨）'},
+  before:   {chip:'还没上班 ☕',  hero:'今天还没开工'},
+  after:    {chip:'已下班 🎉',    hero:'今日收工，一共挣了'},
+  off:      {chip:'休息日 😴',    hero:'今天休息，不营业'}
+};
+let lastCents = null, lastUnitFloor = null, lastTick = 0, lastSec = null, lastDay = null;
+
+function setMoney(v, dim){
+  const el = $('money');
+  if(S.hidden){ $('moneyInt').textContent = '***'; $('moneyDec').textContent = '.**'; }
+  else{
+    const cents = Math.floor(v*100 + 1e-6);
+    $('moneyInt').textContent = Math.floor(cents/100).toLocaleString('zh-CN');
+    $('moneyDec').textContent = '.' + pad(cents % 100);
+    if(lastCents !== null && cents !== lastCents){
+      el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 120);
+    }
+    lastCents = cents;
+  }
+  el.classList.toggle('dim', !!dim);
+}
+
+function tickToday(now, jumped){
+  const st = status(now), ps = perSecond(), earned = earnedToday(now);
+  const sec = secOfDay(now), s = hm(S.start), e = hm(S.end);
+  $('dateLabel').textContent = `${now.getMonth()+1} 月 ${now.getDate()} 日 · 周${WEEK[now.getDay()]}`;
+  $('statusChip').textContent = STATUS[st].chip;
+  $('heroLabel').textContent = STATUS[st].hero;
+  setMoney(earned, st === 'off' || st === 'before');
+  $('rateLine').innerHTML = st === 'off'
+    ? '<span>好好休息，工资下个工作日继续跳</span>'
+    : `<span>每秒 <b class="num">${S.hidden ? '¥***' : '¥' + ps.toFixed(4)}</b></span><span>日薪 <b class="num">${masked(yuan(dailyPay()))}</b></span>`;
+
+  // countdown + progress
+  const showBar = st !== 'off';
+  $('barWrap').classList.toggle('hidden', !showBar);
+  if(st === 'before'){ $('cdLabel').textContent = '距离上班还有'; $('cdTime').textContent = clock(s - sec, true); }
+  else if(st === 'after'){ $('cdLabel').textContent = '今天的班'; $('cdTime').textContent = '上完啦 🏃'; }
+  else if(st === 'off'){ $('cdLabel').textContent = '今天'; $('cdTime').textContent = '不用上班 🛋️'; }
+  else { $('cdLabel').textContent = '距离下班还有'; $('cdTime').textContent = clock(e - sec, true); }
+  if(showBar){
+    const frac = Math.min(1, Math.max(0, (sec - s) / (e - s)));
+    $('barFill').style.width = (frac*100) + '%';
+    $('barPct').textContent = Math.floor(frac*100) + '%';
+    const ms = milestones();
+    $('bar').querySelectorAll('.bar-mark').forEach(m => m.remove());
+    ms.slice(0, -1).forEach(m => {
+      const el = document.createElement('i');
+      el.className = 'bar-mark' + (sec >= m.t ? ' passed' : '');
+      el.style.left = ((m.t - s)/(e - s)*100) + '%';
+      $('bar').appendChild(el);
+    });
+    $('legend').innerHTML = ms.map(m => {
+      const t = pad(Math.floor(m.t/3600)) + ':' + pad(Math.floor(m.t%3600/60));
+      return `<span class="${sec >= m.t ? 'done' : ''}">${m.e} ${t} ${m.label}</span>`;
+    }).join('');
+  }
+  const friday = now.getDay() === 5 && sec >= 12*3600 && ['work','lunch','lunchPaid'].includes(st);
+  document.body.classList.toggle('friday', friday);
+  $('fridayBanner').classList.toggle('hidden', !friday);
+
+  // conversion
+  const units = earned / S.unitPrice, fl = Math.floor(units);
+  $('unitCount').textContent = S.hidden ? '**' : (units >= 100 ? Math.floor(units) : units.toFixed(1));
+  $('unitLabel').textContent = S.unitWord + S.unitName;
+  const shown = Math.min(fl, 12);
+  let cups = '';
+  for(let i = 0; i < shown; i++) cups += `<span>${S.unitEmoji}</span>`;
+  if(fl > 12) cups += `<span class="more">+${fl - 12}</span>`;
+  else cups += `<span class="ghost">${S.unitEmoji}</span>`;
+  $('cups').innerHTML = S.hidden ? `<span class="ghost">${S.unitEmoji}</span>` : cups;
+  if(st === 'work' || st === 'lunchPaid'){
+    const left = (Math.floor(units) + 1 - units) * S.unitPrice / ps;
+    $('unitNext').textContent = `再坚持 ${durShort(left)}，又能多${unitVerb()}一${S.unitWord}`;
+  } else if(st === 'lunch') $('unitNext').textContent = '午休时间不计薪，先吃饭';
+  else if(st === 'after') $('unitNext').textContent = `今天一共挣了 ${units.toFixed(1)} ${S.unitWord}${S.unitName}，辛苦了`;
+  else if(st === 'before') $('unitNext').textContent = `上班后，每 ${durShort(S.unitPrice/ps)} 就能挣一${S.unitWord}`;
+  else $('unitNext').textContent = '休息日不挣钱，但能花钱';
+  if(lastUnitFloor !== null && fl > lastUnitFloor && !jumped){
+    ding(); toast(`叮！又挣到一${S.unitWord}${S.unitName} ${S.unitEmoji}`);
+  }
+  lastUnitFloor = fl;
+
+  // fish + payday minis
+  const tk = dateKey(now);
+  let fs = 0, fm = 0;
+  D.fish.filter(f => dateKey(new Date(f.start)) === tk).forEach(f => { fs += (f.end - f.start)/1000; fm += f.earned; });
+  if(D.fishActive){ fs += (now - D.fishActive.start)/1000; fm += paidSecondsBetween(D.fishActive.start, now.getTime()) * ps; }
+  $('fishMiniTime').textContent = dur(fs).split(' ').slice(0, 2).join(' ');
+  $('fishMiniMoney').textContent = '公司支付 ' + masked(yuan(fm));
+  const pd = daysToPayday(now);
+  $('payDays').textContent = pd === 0 ? '今天！' : pd + ' 天';
+  $('payNote').textContent = pd === 0 ? '发工资啦 🧧' : `每月 ${S.payday} 号`;
+
+  // overtime
+  tickOvertime(now, st);
+  tickWishMini(now);
+
+  // milestone celebrations (only when crossed in real time)
+  if(lastDay === tk && lastSec !== null && !jumped && isWorkday(now)){
+    if(lastSec < s && sec >= s) toast('💸 开工！今天的钱开始跳了');
+    milestones().forEach(m => {
+      if(lastSec < m.t && sec >= m.t){
+        if(m.msg){ toast(m.msg); ding(); }
+        else { confetti(); ding(); modal({emoji:'🏃', title:'下班！', text:`今天一共挣了 ${masked(yuan(earned))}，相当于 ${units.toFixed(1)} ${S.unitWord}${S.unitName}。快跑，别回头。`, ok:'溜了溜了'}); }
+      }
+    });
+  }
+  lastSec = sec; lastDay = tk;
+}
+function unitVerb(){
+  const n = S.unitName;
+  if(/茶|咖啡|奶|饮|酒|水/.test(n)) return '喝';
+  if(/粉|面|饭|鸡|堡|饺|包|锅|罐头/.test(n)) return '吃';
+  return '买';
+}
+
+/* overtime */
+function otToday(now){
+  const k = dateKey(now);
+  let s = D.ot.log[k] || 0;
+  if(D.ot.active && dateKey(new Date(D.ot.active)) === k) s += (now - D.ot.active)/1000;
+  return s;
+}
+function tickOvertime(now, st){
+  const active = !!D.ot.active, ots = otToday(now);
+  const show = active || ots >= 1 || st === 'after' || st === 'off';
+  $('otCard').classList.toggle('hidden', !show);
+  if(!show) return;
+  $('otTimer').textContent = active ? clock((now - D.ot.active)/1000, true) : (ots >= 60 ? dur(ots) : '');
+  $('otBtn').textContent = active ? '下班了！结束加班' : '我还在加班';
+  $('otBtn').className = 'btn block ' + (active ? 'primary' : '');
+  const baseH = paidSecPerDay()/3600, base = dailyPay()/baseH;
+  let text;
+  if(ots < 60){
+    text = st === 'off' ? '休息日也被叫去干活？点下面开始记录。' : '已经到下班时间了。如果还在工位上，点下面记录一下。';
+  } else if(st === 'off' || !isWorkday(now)){
+    text = `休息日加班 ${dur(ots)}。按月薪算，这段时间没有工资（有加班费的话，当我没说）。`;
+  } else {
+    const real = dailyPay() / (baseH + ots/3600);
+    text = `今天加班 ${dur(ots)}，你的实际时薪从 <b>${masked(yuan(base))}</b> 降到了 <b>${masked(yuan(real))}</b>。`;
+  }
+  $('otText').innerHTML = text;
+}
+$('otBtn').onclick = () => {
+  const now = Date.now();
+  if(D.ot.active){
+    const k = dateKey(new Date(D.ot.active));
+    D.ot.log[k] = (D.ot.log[k] || 0) + (now - D.ot.active)/1000;
+    D.ot.active = null; saveD();
+    toast('加班结束，赶紧回家 🏠');
+  } else {
+    D.ot.active = now; saveD();
+    toast('加班开始计时 😮‍💨');
+  }
+  tick(true);
+};
+
+/* ---------- 摸鱼 ---------- */
+const CATS = {
+  toilet:{e:'🚽', name:'带薪如厕', live:'带薪如厕中', verb:'如厕'},
+  phone: {e:'📱', name:'刷手机',   live:'带薪刷手机中', verb:'刷手机'},
+  daze:  {e:'💭', name:'放空发呆', live:'带薪发呆中',   verb:'发呆'}
+};
+const QUIPS = ['这钱赚得心安理得。','你没有在摸鱼，你是在给大脑充电。','适度摸鱼，有益身心。','老板不知道，但这个 App 知道。','工位会想你的，回去吧。'];
+document.querySelectorAll('.fish-pick').forEach(b => b.onclick = () => {
+  D.fishActive = {cat:b.dataset.cat, start:Date.now()}; saveD();
+  unlockAudio(); renderFish(); tick(true);
+});
+$('fishStop').onclick = () => {
+  const a = D.fishActive; if(!a) return;
+  const end = Date.now(), sec = (end - a.start)/1000;
+  const earned = paidSecondsBetween(a.start, end) * perSecond();
+  D.fish.push({cat:a.cat, start:a.start, end, earned, jar: D.jar ? earned * rate() : 0});
+  D.fishActive = null; saveD();
+  const c = CATS[a.cat];
+  if(earned > 0){
+    ding();
+    modal({emoji:c.e, title:`本次带薪${c.verb} ${sec < 1 ? '不到 1 秒' : dur(sec)}，公司为此支付 ${masked(fix(earned))} 元。`,
+           text: QUIPS[Math.floor(Math.random()*QUIPS.length)], ok:'回去搬砖'});
+  } else {
+    modal({emoji:c.e, title:`这次${c.verb}了 ${dur(sec)}`, text:'不过发生在非工作时间，老板不买单 🙃', ok:'行吧'});
+  }
+  renderFish(); tick(true);
+};
+function renderFish(){
+  const a = D.fishActive;
+  $('fishIdle').classList.toggle('hidden', !!a);
+  $('fishLive').classList.toggle('hidden', !a);
+  if(a){ $('fishLiveEmoji').textContent = CATS[a.cat].e; $('fishLiveName').textContent = CATS[a.cat].live; }
+  const now = new Date(), tk = dateKey(now);
+  const today = D.fish.filter(f => dateKey(new Date(f.start)) === tk).reverse();
+  let ts = 0, tm = 0; today.forEach(f => { ts += (f.end - f.start)/1000; tm += f.earned; });
+  $('fishTodaySum').textContent = today.length ? `${dur(ts)} · ${masked(yuan(tm))}` : '';
+  $('fishTodayList').innerHTML = today.length
+    ? today.map(f => `<li><span class="e">${CATS[f.cat].e}</span><span class="grow">${CATS[f.cat].name} ${dur((f.end - f.start)/1000)}<div class="when">${hhmm(f.start)} – ${hhmm(f.end)}</div></span><span class="amt num">${masked(yuan(f.earned))}</span></li>`).join('')
+    : '<li class="empty">今天还没摸过鱼。是不是太认真了？</li>';
+  // monthly report
+  const ym = tk.slice(0, 7), month = D.fish.filter(f => dateKey(new Date(f.start)).slice(0, 7) === ym);
+  $('reportMonth').textContent = `${now.getMonth()+1} 月`;
+  if(!month.length){ $('reportBody').innerHTML = '<div class="empty">本月还没摸过鱼。你是公司的好员工（也许好过头了）。</div>'; return; }
+  let ms = 0, mm = 0; const cnt = {};
+  month.forEach(f => { ms += (f.end - f.start)/1000; mm += f.earned; cnt[f.cat] = (cnt[f.cat] || 0) + 1; });
+  const fav = Object.keys(cnt).sort((x, y) => cnt[y] - cnt[x])[0];
+  $('reportBody').innerHTML =
+    `<div class="sub" style="font-weight:700;color:var(--ink)">本月你从工位上“回收”了</div>
+     <div class="big num">${masked(yuan(mm))}</div>
+     <div class="stats"><div>总时长<b>${dur(ms).split(' ').slice(0, 2).join(' ')}</b></div><div>次数<b>${month.length} 次</b></div><div>最爱<b>${CATS[fav].e}</b></div></div>
+     <p>相当于白赚了 ${S.hidden ? '**' : (mm / S.unitPrice).toFixed(1)} ${S.unitWord}${S.unitName} ${S.unitEmoji}</p>`;
+}
+function tickFish(now){
+  const a = D.fishActive; if(!a) return;
+  $('fishLiveTimer').textContent = clock((now - a.start)/1000);
+  const earned = paidSecondsBetween(a.start, now.getTime()) * perSecond();
+  $('fishLiveEarn').innerHTML = earned > 0 || status(now) === 'work' || status(now) === 'lunchPaid'
+    ? `公司正在为你支付 <b class="num">${masked(yuan(earned))}</b>`
+    : '现在是非工作时间，这次老板不买单';
+}
+
+/* ---------- 愿望存钱罐 ---------- */
+const esc = v => String(v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad3 = x => String(x).padStart(3, '0');
+const rate = () => Math.max(0, Math.min(100, Number(S.saveRate) || 0)) / 100;
+const hourly = () => dailyPay() / (paidSecPerDay() / 3600);
+const workHours = price => price / hourly();
+const jarPerSec = () => perSecond() * rate();
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function ensureJar(){
+  if(!D.jar){ const t = Date.now(); D.jar = {since:t, auto:0, spent:0, periodStart:t, notified:null}; }
+}
+// lock in what the jar has earned so far, so later setting changes are not applied retroactively
+function bankJar(){
+  if(!D.jar) return;
+  const t = Date.now();
+  D.jar.auto += paidSecondsBetween(D.jar.since, t) * jarPerSec();
+  D.jar.since = t; saveD();
+}
+const depositSum = () => D.deposits.reduce((a, x) => a + x.amount, 0);
+function jarTotal(now){
+  if(!D.jar) return 0;
+  return D.jar.auto + paidSecondsBetween(D.jar.since, now.getTime()) * jarPerSec() + depositSum() - D.jar.spent;
+}
+function fishFund(now){
+  if(!D.jar) return 0;
+  const p = D.jar.periodStart;
+  let v = D.fish.reduce((a, f) => a + (f.jar && f.end >= p ? f.jar : 0), 0);
+  if(D.fishActive) v += paidSecondsBetween(Math.max(D.fishActive.start, p), now.getTime()) * jarPerSec();
+  return v;
+}
+const periodDeposits = () => D.jar ? D.deposits.filter(x => x.t >= D.jar.periodStart) : [];
+
+// when will the jar hold `remaining` more yuan? walks forward through paid work time
+function eta(remaining, now){
+  if(remaining <= 1e-9) return {done:true};
+  const r = jarPerSec();
+  if(!(r > 0) || !S.days.length) return {never:true};
+  const total = remaining / r;
+  let need = total, d = dayStart(now);
+  const t0 = now.getTime();
+  for(let i = 0; i < 3700; i++){
+    if(isWorkday(d)){
+      const base = d.getTime();
+      for(const [a, b] of paidIntervals()){
+        const st = Math.max(t0, base + a*1000), en = base + b*1000;
+        if(en > st){
+          const avail = (en - st)/1000;
+          if(avail >= need) return {date:new Date(st + need*1000), sec:total};
+          need -= avail;
+        }
+      }
+    }
+    d = new Date(d); d.setDate(d.getDate() + 1);
+  }
+  return {far:true, sec:total};
+}
+function workLen(sec, ban){
+  const day = paidSecPerDay();
+  if(sec < 3600) return Math.max(1, Math.round(sec/60)) + ' 分钟' + (ban ? '班' : '');
+  if(sec < day) return (sec/3600).toFixed(1) + ' 小时' + (ban ? '班' : '');
+  return (sec/day).toFixed(1) + ' 个工作日';
+}
+function fmtDate(d, now){
+  return (d.getFullYear() !== now.getFullYear() ? d.getFullYear() + ' 年 ' : '') + `${d.getMonth()+1} 月 ${d.getDate()} 日`;
+}
+function spanText(ms){
+  if(ms < 3600000) return Math.max(1, Math.round(ms/60000)) + ' 分钟';
+  if(ms < 86400000) return Math.round(ms/3600000) + ' 小时';
+  return Math.ceil(ms/86400000) + ' 天';
+}
+function etaText(remaining, now){
+  const e = eta(remaining, now);
+  if(e.done) return '已经攒够啦 🎉';
+  if(e.never) return '存钱比例是 0，罐子暂时不会自己涨';
+  if(e.far) return `还要上 ${workLen(e.sec, true)}，有点远，可以提高存钱比例试试`;
+  const when = dateKey(e.date) === dateKey(now) ? '今天 ' + hhmm(e.date) : fmtDate(e.date, now) + '（周' + WEEK[e.date.getDay()] + '）';
+  return `还要上 ${workLen(e.sec, true)}，预计<b>${when}</b>攒够`;
+}
+function etaShort(remaining, now){
+  const e = eta(remaining, now);
+  if(e.done) return '已攒够';
+  if(e.never) return '罐子暂停中';
+  if(e.far) return '还早着呢';
+  return '预计 ' + (dateKey(e.date) === dateKey(now) ? '今天' : fmtDate(e.date, now));
+}
+function skipPresets(){
+  const first = S.unitPrice <= 200 ? {e:S.unitEmoji, name:S.unitName, p:S.unitPrice} : {e:'🧋', name:'奶茶', p:20};
+  return [first, {e:'🥡', name:'外卖', p:30}, {e:'🚕', name:'打车', p:25}, {e:'🛒', name:'冲动网购', p:100}];
+}
+
+let wishSecond = null, lastJarCents = null;
+function renderWish(){
+  const now = new Date(), w = D.wishes[0], jc = $('jarCard');
+  if(!w){
+    const left = D.jar && D.wall.length;
+    jc.innerHTML = `<div class="jar-empty"><div class="e">🐷</div>
+      <h3>${left ? '罐子里还有 <span class="num" id="jarLeft"></span>' : '还没有愿望'}</h3>
+      <p>${left ? '上一个愿望已经实现了，许下一个吧，罐子会接着攒。' : `许一个愿望，之后每上一秒班，工资的 ${S.saveRate}% 就会自动掉进罐子。`}</p>
+      <button class="btn primary" data-act="add">＋ 许个愿望</button></div>`;
+  } else {
+    const h = workHours(w.price);
+    jc.innerHTML = `
+      <div class="jar-top">
+        <div class="jar"><div class="jar-lid"></div><div class="jar-body"><div class="jar-fill" id="jarFill"></div><span class="jar-emoji">${esc(w.emoji)}</span></div></div>
+        <div class="jar-info">
+          <div class="jar-label">正在攒</div>
+          <div class="jar-name">${esc(w.name)}</div>
+          <div class="jar-amt num" id="jarAmt"></div>
+          <div class="jar-of num" id="jarOf"></div>
+        </div>
+      </div>
+      <div class="facts">
+        <div>⏱️ 它值 <b>${h < 1 ? Math.max(1, Math.round(h*60)) + ' 分钟' : h.toFixed(1) + ' 小时'}</b>的班，相当于 ${(w.price / dailyPay()).toFixed(1)} 天的工资</div>
+        <div id="jarEta"></div>
+        <div id="jarFish"></div>
+      </div>
+      <button class="btn primary block hidden" id="jarClaim" data-act="claim">🎉 攒够了！领取购买批准书</button>
+      <div class="jar-rate num" id="jarRate"></div>`;
+  }
+  lastJarCents = null;
+
+  $('skipCard').classList.toggle('hidden', !w);
+  if(w){
+    $('skipGrid').innerHTML = skipPresets().map((p, i) =>
+      `<button data-act="skip" data-i="${i}"><span class="e">${esc(p.e)}</span><span>${esc(p.name)}<small class="num">+${masked(yuan(p.p))}</small></span></button>`).join('');
+    const recent = periodDeposits().slice(-5).reverse();
+    $('depositList').innerHTML = recent.map(x => {
+      const d = new Date(x.t), day = dateKey(d) === dateKey(now) ? '今天' : `${d.getMonth()+1}/${d.getDate()}`;
+      return `<li><span class="e">${esc(x.e)}</span><span class="grow">忍住了${esc(x.name)}<div class="when">${day} ${hhmm(x.t)}</div></span><span class="amt num">+${masked(yuan(x.amount))}</span><button class="undo" data-act="undo" data-id="${x.id}">撤销</button></li>`;
+    }).join('');
+    const td = D.deposits.filter(x => dateKey(new Date(x.t)) === dateKey(now));
+    $('skipToday').textContent = td.length ? `今天 ${td.length} 次 · ${masked(yuan(td.reduce((a, x) => a + x.amount, 0)))}` : '';
+  }
+
+  $('queueList').innerHTML = D.wishes.length ? D.wishes.map((x, i) =>
+    `<li data-act="menu" data-id="${x.id}"><span class="e">${esc(x.emoji)}</span><span class="grow">${esc(x.name)}${i === 0 ? '<em class="tag">正在攒</em>' : ''}<div class="when"><span class="num">${masked(yuan(x.price))}</span> · ${workHours(x.price).toFixed(1)} 小时班 · <span id="qe-${x.id}"></span></div></span><span class="more-btn">⋯</span></li>`).join('')
+    : '<li class="empty">清单还是空的。想要的东西，先写下来。</li>';
+
+  $('rateChips').innerHTML = [10, 20, 30, 50].map(r => `<button data-act="rate" data-rate="${r}" class="${+S.saveRate === r ? 'on' : ''}">${r}%</button>`).join('');
+  $('rateText').innerHTML = rate() > 0
+    ? `工资的 <b>${S.saveRate}%</b> 会自动进罐子，每个工作日大约 <b class="num">${masked(yuan(dailyPay() * rate()))}</b>。`
+    : '存钱比例是 0，罐子暂停中。选一个比例就会接着攒。';
+
+  $('wallCard').classList.toggle('hidden', !D.wall.length);
+  $('wallList').innerHTML = D.wall.map(x =>
+    `<li data-act="cert" data-id="${x.id}"><span class="e">${esc(x.emoji)}</span><span class="grow">${esc(x.name)}<div class="when">${fmtDate(new Date(x.done), now)}攒够 · 用了 ${spanText(x.stats.spanMs)}</div></span><span class="amt">📜</span></li>`).join('');
+
+  renderChecker();
+  wishSecond = null;
+  tickWish(now);
+}
+
+function tickWish(now){
+  const w = D.wishes[0], total = jarTotal(now);
+  const sec = Math.floor(now.getTime() / 1000), full = sec !== wishSecond;
+  wishSecond = sec;
+  if($('jarLeft')) $('jarLeft').textContent = masked(yuan(Math.max(0, total)));
+  if(w && $('jarAmt')){
+    const pct = Math.max(0, Math.min(1, total / w.price));
+    if(S.hidden) $('jarAmt').textContent = '¥***';
+    else {
+      const c = Math.floor(total*100 + 1e-6);
+      $('jarAmt').innerHTML = '¥' + Math.floor(c/100).toLocaleString('zh-CN') + '<small>.' + pad(c % 100) + '</small>';
+      if(lastJarCents !== null && c !== lastJarCents){ $('jarAmt').classList.add('bump'); setTimeout(() => $('jarAmt') && $('jarAmt').classList.remove('bump'), 120); }
+      lastJarCents = c;
+    }
+    $('jarFill').style.height = (pct*100) + '%';
+    $('jarOf').textContent = `/ ${masked(yuan(w.price))} · ${(pct*100).toFixed(1)}%`;
+    $('jarClaim').classList.toggle('hidden', pct < 1);
+    const st = status(now);
+    $('jarRate').textContent = rate() <= 0 ? '存钱比例为 0，罐子暂停中'
+      : (st === 'work' || st === 'lunchPaid') ? `每秒 +${S.hidden ? '¥***' : '¥' + jarPerSec().toFixed(4)} · 工资的 ${S.saveRate}% 进罐子`
+      : '现在不是上班时间，罐子歇着，上班后接着涨';
+    if(full){
+      const ff = fishFund(now);
+      $('jarFish').innerHTML = ff >= 0.01 ? `🐟 其中 <b>${masked(yuan(ff))}</b> 是带薪摸鱼时攒的` : '🐟 摸鱼时罐子照样涨，摸鱼攒的钱会单独记在这里';
+      $('jarEta').innerHTML = '📅 ' + etaText(w.price - total, now);
+    }
+  }
+  if(full){
+    let cum = 0;
+    D.wishes.forEach(x => { cum += x.price; const el = $('qe-' + x.id); if(el) el.textContent = etaShort(cum - total, now); });
+  }
+}
+
+function tickWishMini(now){
+  const w = D.wishes[0];
+  $('wmCta').classList.toggle('hidden', !!w);
+  $('wmBox').classList.toggle('hidden', !w);
+  if(!w) return;
+  const total = jarTotal(now), pct = Math.max(0, Math.min(1, total / w.price));
+  $('wmName').textContent = w.emoji + ' ' + w.name;
+  $('wmPct').textContent = (pct*100).toFixed(1) + '%';
+  $('wmFill').style.width = (pct*100) + '%';
+  $('wmNote').textContent = pct >= 1 ? '攒够啦！点这里领购买批准书 🎉' : `已攒 ${masked(yuan(total))} / ${masked(yuan(w.price))}`;
+}
+
+function checkReached(now){
+  const w = D.wishes[0];
+  if(!w || !D.jar || D.jar.notified === w.id) return;
+  if(jarTotal(now) >= w.price){
+    D.jar.notified = w.id; saveD(); ding();
+    toast(`🎉 ${w.emoji} ${w.name} 攒够了！去愿望页领批准书`);
+    if(current === 'wish') renderWish();
+  }
+}
+
+function renderChecker(){
+  const v = parseFloat($('chkPrice').value);
+  if(!isFinite(v) || v <= 0){
+    $('chkResult').innerHTML = '看到想买的东西，输入价格，算算它要你上多久的班。';
+    $('chkAdd').classList.add('hidden'); return;
+  }
+  const h = workHours(v), r = rate();
+  $('chkResult').innerHTML =
+    `= <span class="big num">${h < 1 ? Math.max(1, Math.round(h*60)) + ' 分钟' : h.toFixed(1) + ' 小时'}</span> 班<br>` +
+    `相当于 <b>${(v / dailyPay()).toFixed(1)} 天</b>的工资，或者 <b>${(v / S.unitPrice).toFixed(1)} ${esc(S.unitWord + S.unitName)}</b><br>` +
+    (r > 0 ? `按 ${S.saveRate}% 的比例存，要攒 <b>${(v / (dailyPay() * r)).toFixed(1)} 个工作日</b>` : '');
+  $('chkAdd').classList.remove('hidden');
+}
+
+const WISH_EMOJI = ['🎮','📱','💻','🎧','⌚','📷','👟','🎸','✈️','🛋️','🚲','🎁'];
+const GUESS = [[/switch|游戏|ps5|ps4|xbox|掌机|steam/i,'🎮'],[/手机|iphone|phone|华为|小米/i,'📱'],[/电脑|笔记本|mac|ipad|平板|显卡|显示器/i,'💻'],[/耳机|音箱|airpods|音响/i,'🎧'],[/手表|watch|手环/i,'⌚'],[/相机|镜头|拍立得/i,'📷'],[/鞋/,'👟'],[/吉他|琴|鼓/,'🎸'],[/旅行|旅游|机票|酒店|出国/,'✈️'],[/沙发|床|椅|床垫/,'🛋️'],[/自行车|单车|电动车|车/,'🚲']];
+function addWish(price){
+  let emoji = '🎁', picked = false;
+  const close = openSheet(`<div class="e" id="wE">🎁</div><h3>许个新愿望</h3>
+    <input class="field" id="wName" maxlength="16" placeholder="想买什么？比如：游戏机" autocomplete="off">
+    <div class="field money-field"><span>¥</span><input id="wPrice" type="number" inputmode="decimal" min="0" placeholder="价格" value="${price > 0 ? price : ''}"></div>
+    <div class="emoji-pick" id="wPick">${WISH_EMOJI.map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>
+    <p class="warn hidden" id="wWarn"></p>
+    <div class="btns"><button class="btn" id="wCancel">取消</button><button class="btn primary" id="wOk">许愿</button></div>`);
+  const setEmoji = e => { emoji = e; $('wE').textContent = e; document.querySelectorAll('#wPick button').forEach(b => b.classList.toggle('on', b.dataset.e === e)); };
+  setEmoji(emoji);
+  $('wPick').onclick = ev => { const b = ev.target.closest('button'); if(b){ picked = true; setEmoji(b.dataset.e); } };
+  $('wName').oninput = () => { if(picked) return; const g = GUESS.find(([re]) => re.test($('wName').value)); setEmoji(g ? g[1] : '🎁'); };
+  $('wCancel').onclick = close;
+  $('wOk').onclick = () => {
+    const name = $('wName').value.trim(), p = parseFloat($('wPrice').value);
+    const warn = m => { $('wWarn').textContent = m; $('wWarn').classList.remove('hidden'); };
+    if(!name) return warn('先写下想买什么');
+    if(!isFinite(p) || p <= 0) return warn('价格要大于 0');
+    const first = !D.jar;
+    ensureJar();
+    D.wishes.push({id:newId(), emoji, name, price:Math.round(p*100)/100, created:Date.now()});
+    saveD(); close();
+    if(current !== 'wish') go('wish'); else renderWish();
+    toast(first && rate() > 0 ? `罐子开始攒了！上班时每秒 +¥${jarPerSec().toFixed(4)}` : `${emoji} 已加入愿望清单`);
+  };
+}
+
+function wishMenu(id){
+  const w = D.wishes.find(x => x.id === id); if(!w) return;
+  const idx = D.wishes.indexOf(w);
+  const close = openSheet(`<div class="e">${esc(w.emoji)}</div><h3>${esc(w.name)}</h3><p>${masked(yuan(w.price))} · 值 ${workHours(w.price).toFixed(1)} 小时班</p>
+    <div class="stack">${idx > 0 ? '<button class="btn yolk block" id="mTop">先攒这个</button>' : ''}<button class="btn block" id="mDel">删掉这个愿望</button><button class="btn ghost block" id="mCancel">算了</button></div>`);
+  if(idx > 0) $('mTop').onclick = () => { D.wishes.splice(idx, 1); D.wishes.unshift(w); saveD(); close(); renderWish(); toast(`现在先攒 ${w.emoji} ${w.name}`); };
+  $('mDel').onclick = () => { D.wishes.splice(idx, 1); saveD(); close(); renderWish(); toast('已删除，罐子里的钱还在'); };
+  $('mCancel').onclick = close;
+}
+
+function skip(p){
+  const w = D.wishes[0]; if(!w || !D.jar) return;
+  D.deposits.push({id:newId(), t:Date.now(), amount:p.p, e:p.e, name:p.name});
+  saveD(); ding(); confetti(['🪙','💰','🪙'], 14);
+  toast(jarPerSec() > 0 ? `忍住了！离 ${w.emoji} ${w.name} 又近了 ${workLen(p.p / jarPerSec(), false)}` : `忍住了！${yuan(p.p)} 已存进罐子`);
+  renderWish();
+}
+
+const QUOTES = ['同意。这是你应得的。', '同意，买！已经忍很久了。', '批准。今天的你值得拥有它。', '同意。钱是你一秒一秒挣来的。'];
+function claim(){
+  const w = D.wishes[0], now = new Date();
+  if(!w || !D.jar || jarTotal(now) + 1e-9 < w.price) return;
+  const pd = periodDeposits();
+  w.done = now.getTime();
+  w.stats = {
+    hours: workHours(w.price),
+    spanMs: now.getTime() - Math.max(w.created, D.jar.periodStart),
+    fish: Math.min(fishFund(now), w.price),
+    skips: pd.length,
+    skipSum: pd.reduce((a, x) => a + x.amount, 0),
+    no: dateKey(now).replace(/-/g, '') + '-' + pad3(D.wall.length + 1),
+    quote: QUOTES[Math.floor(Math.random() * QUOTES.length)]
+  };
+  D.jar.spent += w.price; D.jar.periodStart = now.getTime(); D.jar.notified = null;
+  D.wishes.shift(); D.wall.unshift(w); saveD();
+  confetti(['🎉','🧧','✨', w.emoji]); ding();
+  renderWish(); showCert(w);
+}
+
+function certRows(w){
+  const s = w.stats, rows = [`⏱️ 相当于上班 ${s.hours.toFixed(1)} 小时挣的钱`];
+  if(s.fish >= 0.01) rows.push(`🐟 其中带薪摸鱼贡献了 ${masked(yuan(s.fish))}`);
+  if(s.skips) rows.push(`💪 忍住了 ${s.skips} 次，省下 ${masked(yuan(s.skipSum))}`);
+  rows.push(`📅 从许愿到攒够，用了 ${spanText(s.spanMs)}`);
+  return rows;
+}
+const certSign = w => { const d = new Date(w.done); return [`审批意见：${w.stats.quote}`, `审批人：过去 ${spanText(w.stats.spanMs)}努力上班的我`, `日期：${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日`]; };
+function showCert(w){
+  const close = openSheet(`<div class="cert">
+      <div class="cert-title">购买批准书</div>
+      <div class="cert-no">No.${w.stats.no}</div>
+      <div class="cert-lead">兹批准购买</div>
+      <div class="cert-item"><span class="e">${esc(w.emoji)}</span>${esc(w.name)}</div>
+      <div class="cert-price num">${masked(yuan(w.price))}</div>
+      <div class="cert-rows">${certRows(w).map(r => `<div>${esc(r)}</div>`).join('')}</div>
+      <div class="cert-sign">${certSign(w).map(esc).join('<br>')}</div>
+      <div class="stamp"><b>批准</b><i>APPROVED</i></div>
+    </div>
+    <div class="cert-btns"><button class="btn" id="certSave">📸 保存图片</button><button class="btn primary" id="certOk">收下了</button></div>`, 'sheet cert-sheet');
+  $('certOk').onclick = close;
+  $('certSave').onclick = () => saveCert(w);
+}
+
+function drawCert(w){
+  const W = 360, H = 600, k = 3;
+  const c = document.createElement('canvas'); c.width = W*k; c.height = H*k;
+  const x = c.getContext('2d'); x.scale(k, k);
+  const FAM = getComputedStyle(document.body).fontFamily;
+  const font = (sz, wt) => { x.font = `${wt} ${sz}px ${FAM}`; };
+  const box = (X, Y, w2, h2, r) => { x.beginPath(); if(x.roundRect) x.roundRect(X, Y, w2, h2, r); else x.rect(X, Y, w2, h2); };
+  const spacing = v => { try{ x.letterSpacing = v; }catch(e){} };
+  const INK = '#1F1A13', MUTED = '#7A6F5F';
+  x.fillStyle = '#FFF4D9'; x.fillRect(0, 0, W, H);
+  x.fillStyle = INK; box(22, 22, W - 38, H - 38, 18); x.fill();
+  x.fillStyle = '#FFFBEF'; box(16, 16, W - 38, H - 38, 18); x.fill();
+  x.lineWidth = 2.5; x.strokeStyle = INK; x.stroke();
+  x.setLineDash([5, 4]); x.lineWidth = 1.5; x.strokeStyle = '#E3C98F'; box(25, 25, W - 56, H - 56, 12); x.stroke(); x.setLineDash([]);
+  const cx = 16 + (W - 38) / 2, L = 46;
+  x.textAlign = 'center'; x.fillStyle = INK;
+  font(28, 900); spacing('6px'); x.fillText('购买批准书', cx + 3, 76); spacing('0px');
+  x.fillStyle = MUTED; font(11, 700); x.fillText('No.' + w.stats.no, cx, 96);
+  font(14, 700); x.fillText('兹批准购买', cx, 136);
+  x.fillStyle = INK; font(50, 400); x.fillText(w.emoji, cx, 198);
+  let sz = 24; font(sz, 900); while(x.measureText(w.name).width > 270 && sz > 14){ sz--; font(sz, 900); }
+  x.fillText(w.name, cx, 238);
+  x.fillStyle = '#FF5A36'; font(20, 900); x.fillText(masked(yuan(w.price)), cx, 268);
+  x.strokeStyle = INK; x.lineWidth = 2; x.beginPath(); x.moveTo(L, 292); x.lineTo(W - 68, 292); x.stroke();
+  x.textAlign = 'left'; x.fillStyle = INK; font(14, 700);
+  let y = 322;
+  certRows(w).forEach(r => { x.fillText(r, L, y); y += 26; });
+  y += 12; font(14, 800);
+  certSign(w).forEach(r => { x.fillText(r, L, y); y += 25; });
+  x.save(); x.translate(W - 84, H - 76); x.rotate(-16 * Math.PI / 180); x.globalAlpha = .85;
+  x.strokeStyle = '#E5322D'; x.fillStyle = '#E5322D';
+  x.lineWidth = 4; x.beginPath(); x.arc(0, 0, 44, 0, Math.PI*2); x.stroke();
+  x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, 37, 0, Math.PI*2); x.stroke();
+  x.textAlign = 'center'; font(26, 900); spacing('2px'); x.fillText('批准', 1, 6); spacing('0px');
+  font(8, 800); x.fillText('APPROVED', 0, 21);
+  x.restore();
+  x.textAlign = 'center'; x.fillStyle = MUTED; font(10, 700); x.textAlign = 'left'; x.fillText('今天赚了吗 · 愿望存钱罐', L, H - 46);
+  return c;
+}
+function saveCert(w){
+  let b64;
+  try{ b64 = drawCert(w).toDataURL('image/png').split(',')[1]; }catch(e){ toast('图片没生成成功，截图也能分享 📸'); return; }
+  if(window.ZBridge && typeof window.ZBridge.saveImage === 'function'){
+    let r = 'err';
+    try{ r = String(window.ZBridge.saveImage(b64, 'ZhuanLeMa_' + Date.now() + '.png')); }catch(e){ r = 'err:' + e; }
+    if(r === 'ok') toast('已保存到相册 📸');
+    else if(r === 'old') toast('这台手机的系统版本较旧，截图就能保存 📸');
+    else toast('保存没成功，截图也能分享 📸');
+    return;
+  }
+  toast('截图就能保存分享 📸');
+}
+
+$('page-wish').addEventListener('click', ev => {
+  const el = ev.target.closest('[data-act]'); if(!el) return;
+  const act = el.dataset.act;
+  if(act === 'add') addWish();
+  else if(act === 'claim') claim();
+  else if(act === 'skip') skip(skipPresets()[+el.dataset.i]);
+  else if(act === 'undo'){ D.deposits = D.deposits.filter(x => x.id !== el.dataset.id); saveD(); renderWish(); toast('已撤销'); }
+  else if(act === 'menu') wishMenu(el.dataset.id);
+  else if(act === 'rate'){ bankJar(); S.saveRate = +el.dataset.rate; saveS(); renderWish(); toast(`存钱比例改成 ${S.saveRate}%`); }
+  else if(act === 'cert'){ const w = D.wall.find(x => x.id === el.dataset.id); if(w) showCert(w); }
+});
+$('chkPrice').addEventListener('input', renderChecker);
+$('chkAdd').onclick = () => addWish(parseFloat($('chkPrice').value));
+$('skipCustom').onclick = () => {
+  const v = parseFloat($('skipAmt').value);
+  if(!isFinite(v) || v <= 0){ toast('先输入金额'); return; }
+  skip({e:'💰', name:'一笔开销', p:Math.round(v*100)/100}); $('skipAmt').value = '';
+};
+
+/* ---------- 首富 ---------- */
+const ITEMS = [
+  {id:'tea',     e:'🧋', name:'一杯奶茶，全糖加满小料',        p:20,             q:'这次不用看价格了'},
+  {id:'hotpot',  e:'🍲', name:'一顿火锅，菜单从头点到尾',      p:1000,           q:'服务员：您确定吗？'},
+  {id:'phone',   e:'📱', name:'新款手机，每个颜色来一台',      p:60000,          q:'换着用，一天一个色'},
+  {id:'holiday', e:'🏖️', name:'给自己放一年带薪假',            p:300000,         q:'这次的“带薪”，是自己发的'},
+  {id:'car',     e:'🏎️', name:'一辆超跑',                      p:6000000,        q:'通勤时间缩短到……还是堵车'},
+  {id:'flat',    e:'🏙️', name:'市中心大平层',                  p:80000000,       q:'离公司走路 3 分钟，但你不用上班了'},
+  {id:'island',  e:'🏝️', name:'一座私人小岛',                  p:300000000,      q:'岛上没有 Wi-Fi，也没有老板'},
+  {id:'jet',     e:'🛩️', name:'一架私人飞机',                  p:600000000,      q:'再也不用抢靠窗的座位'},
+  {id:'yacht',   e:'🛥️', name:'一艘超级游艇',                  p:3000000000,     q:'船上配了奶茶吧台'},
+  {id:'treat',   e:'🧋', name:'请全国 2 亿打工人每人一杯奶茶',  p:4000000000,     q:'今天全国打工人的下午茶，你请了'},
+  {id:'company', e:'🏢', name:'买下你们公司',                  p:20000000000,    q:'第一件事：取消周一早会'},
+  {id:'club',    e:'⚽', name:'一支豪门足球队',                p:40000000000,    q:'你当老板，球员带薪踢球'},
+  {id:'airline', e:'✈️', name:'一家航空公司',                  p:150000000000,   q:'所有航班改成全员头等舱'},
+  {id:'city',    e:'🌆', name:'再造一座新城区',                p:500000000000,   q:'规定全城下午 5 点下班'}
+];
+const spent = () => ITEMS.reduce((a, it) => a + (D.rich[it.id] || 0) * it.p, 0);
+function pctLeft(left){
+  if(left >= S.richAsset) return '100%';
+  const p = left / S.richAsset * 100;
+  for(let d = 1; d <= 10; d++){ const s = p.toFixed(d); if(s !== (100).toFixed(d)) return s + '%'; }
+  return p.toFixed(10) + '%';
+}
+function renderRich(){
+  const sp = spent(), left = S.richAsset - sp;
+  $('richBalance').textContent = '¥' + big(left);
+  $('richFull').textContent = '¥' + fix(left, 0);
+  let msg;
+  const ratio = sp / S.richAsset;
+  if(sp === 0) msg = `你现在有 <b>${big(S.richAsset)}</b>元。随便花，看看能不能花完。`;
+  else if(left <= 0) msg = '🎉 恭喜你，做到了首富本人都做不到的事：把钱花完了。';
+  else if(ratio < 0.01) msg = `已经花了 ${big(sp)}元，你还剩 <b>${pctLeft(left)}</b>。`;
+  else if(ratio < 0.5) msg = `手指点酸了吧？已经花了 ${big(sp)}元，还剩 <b>${pctLeft(left)}</b>。`;
+  else msg = `终于花掉一大半了！还剩 <b>${pctLeft(left)}</b>，坚持住。`;
+  $('richMsg').innerHTML = msg;
+  $('richList').innerHTML = ITEMS.map(it => {
+    const n = D.rich[it.id] || 0;
+    return `<div class="item"><div class="e">${it.e}</div><div class="info"><div class="name">${it.name}</div><div class="price num">¥${big(it.p)}</div></div>
+      <div class="qty"><button data-sell="${it.id}" ${n ? '' : 'disabled'}>−</button><span class="num">${n}</span><button class="buy" data-buy="${it.id}" ${left >= it.p ? '' : 'disabled'}>+</button></div></div>`;
+  }).join('');
+}
+$('richList').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if(!b || b.disabled) return;
+  const id = b.dataset.buy || b.dataset.sell, it = ITEMS.find(x => x.id === id);
+  if(b.dataset.buy){
+    if(S.richAsset - spent() < it.p){ toast('钱不够了……这句话首富也会说吗？'); return; }
+    D.rich[id] = (D.rich[id] || 0) + 1;
+    toast(`${it.e} ${it.q}`);
+    if(it.p >= 1e9) confetti(['💸','💰','🪙','✨']);
+  } else {
+    D.rich[id] = Math.max(0, (D.rich[id] || 0) - 1);
+    toast('退货成功，首富也会后悔');
+  }
+  saveD(); renderRich();
+});
+$('richReset').onclick = () => modal({emoji:'🛏️', title:'一觉醒来，重新当首富？', text:'购物清单会清空，余额恢复。', ok:'再花一遍', cancel:'不了',
+  onOk: () => { D.rich = {}; saveD(); renderRich(); toast('钱又回来了 💰'); }});
+
+/* ---------- 设置 ---------- */
+const PRESETS = [
+  {unitEmoji:'🧋', unitName:'奶茶',   unitWord:'杯', unitPrice:20},
+  {unitEmoji:'☕', unitName:'咖啡',   unitWord:'杯', unitPrice:15},
+  {unitEmoji:'🍜', unitName:'螺蛳粉', unitWord:'碗', unitPrice:18},
+  {unitEmoji:'🐱', unitName:'猫罐头', unitWord:'罐', unitPrice:8},
+  {unitEmoji:'🎮', unitName:'游戏机', unitWord:'台', unitPrice:2500}
+];
+$('presets').innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p.unitEmoji} ${p.unitName}</button>`).join('');
+$('presets').onclick = ev => {
+  const b = ev.target.closest('button'); if(!b) return;
+  Object.assign(S, PRESETS[+b.dataset.i]); saveS(); fillForm(); lastUnitFloor = null; toast('已换成 ' + S.unitName);
+};
+$('f-days').innerHTML = [1,2,3,4,5,6,0].map(d => `<button data-d="${d}">${WEEK[d]}</button>`).join('');
+$('f-days').onclick = ev => {
+  const b = ev.target.closest('button'); if(!b) return;
+  const d = +b.dataset.d;
+  bankJar();
+  S.days = S.days.includes(d) ? S.days.filter(x => x !== d) : S.days.concat(d);
+  saveS(); fillForm(); savedToast();
+};
+const FIELDS = ['saveRate','salary','payDays','payday','start','end','lunchStart','lunchEnd','lunchPaid','unitEmoji','unitName','unitWord','unitPrice','richAsset','sound','hidden'];
+function fillForm(){
+  FIELDS.forEach(k => { const el = $('f-' + k); if(el.type === 'checkbox') el.checked = !!S[k]; else el.value = S[k]; });
+  document.querySelectorAll('#f-days button').forEach(b => b.classList.toggle('on', S.days.includes(+b.dataset.d)));
+  validateTimes();
+}
+function validateTimes(){
+  const w = $('timeWarn'); let msg = '';
+  if(hm(S.end) <= hm(S.start)) msg = '下班时间要晚于上班时间（暂不支持跨夜班）。';
+  else if(!lunchValid()) msg = '午休时间不在上班时间内，暂时按没有午休计算。';
+  else if(!S.days.length) msg = '还没选工作日，那就天天休息吧 😎';
+  w.textContent = msg; w.classList.toggle('hidden', !msg);
+}
+let saveTimer;
+function savedToast(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => toast('已保存 ✓'), 500); }
+FIELDS.forEach(k => {
+  const el = $('f-' + k);
+  el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => {
+    let v = el.type === 'checkbox' ? el.checked : el.value;
+    if(el.type === 'number'){
+      v = parseFloat(v);
+      if(!isFinite(v) || v < 0 || (v === 0 && k !== 'saveRate')) return;
+      if(k === 'saveRate') v = Math.min(100, Math.round(v));
+      if(k === 'payday') v = Math.min(31, Math.max(1, Math.round(v)));
+    } else if(el.type === 'time'){
+      if(!/^\d{2}:\d{2}/.test(v)) return;
+      v = v.slice(0, 5);
+      const test = Object.assign({}, S, {[k]: v});
+      if((k === 'start' || k === 'end') && hm(test.end) <= hm(test.start)){
+        $('timeWarn').textContent = '下班时间要晚于上班时间（暂不支持跨夜班）。';
+        $('timeWarn').classList.remove('hidden');
+        return;
+      }
+    } else if(el.type === 'text'){
+      v = v.trim(); if(!v) return;
+    }
+    if(k !== 'hidden' && k !== 'sound') bankJar();
+    S[k] = v; saveS(); store.set('onboarded', true);
+    validateTimes();
+    if(k === 'hidden') updateEye();
+    if(['unitPrice','salary','payDays','start','end','lunchStart','lunchEnd','lunchPaid','days'].includes(k)) lastUnitFloor = null;
+    savedToast();
+  });
+});
+// time inputs: revert invalid start/end on blur
+['start','end'].forEach(k => $('f-' + k).addEventListener('change', () => {
+  if(hm(S.end) <= hm(S.start)){ toast('下班要晚于上班哦'); }
+  fillForm();
+}));
+$('clearRecords').onclick = () => modal({emoji:'🧹', title:'清空摸鱼和加班记录？', text:'清空后无法恢复。', ok:'清空', cancel:'算了',
+  onOk: () => { D.fish = []; D.fishActive = null; D.ot = {active:null, log:{}}; saveD(); toast('已清空'); }});
+$('resetSettings').onclick = () => modal({emoji:'↩️', title:'恢复默认设置？', text:'工资和时间会恢复成示例值，记录会保留。', ok:'恢复', cancel:'算了',
+  onOk: () => { bankJar(); S = Object.assign({}, DEFAULTS); saveS(); fillForm(); updateEye(); lastUnitFloor = null; toast('已恢复默认'); }});
+
+$('clearWishes').onclick = () => modal({emoji:'🐷', title:'清空愿望和存钱罐？', text:'愿望清单、愿望墙和罐子里的钱都会清空，无法恢复。', ok:'清空', cancel:'算了',
+  onOk: () => { D.wishes = []; D.wall = []; D.deposits = []; D.jar = null; saveD(); toast('已清空'); }});
+
+/* ---------- eye / welcome ---------- */
+function updateEye(){ $('eyeBtn').textContent = S.hidden ? '🙈' : '👀'; lastCents = null; }
+$('eyeBtn').onclick = () => { S.hidden = !S.hidden; saveS(); updateEye(); if(current === 'settings') fillForm(); if(current === 'fish') renderFish(); if(current === 'rich') renderRich(); if(current === 'wish') renderWish(); tick(true); toast(S.hidden ? '金额已隐藏 🙈' : '金额已显示 👀'); };
+if(!store.get('onboarded', false)) $('welcome').classList.remove('hidden');
+$('goSettings').onclick = () => { store.set('onboarded', true); $('welcome').classList.add('hidden'); go('settings'); };
+$('dismissWelcome').onclick = () => { store.set('onboarded', true); $('welcome').classList.add('hidden'); };
+$('fishMini').onclick = () => go('fish');
+$('wishMini').onclick = () => go('wish');
+
+/* ---------- loop ---------- */
+function tick(force){
+  const now = new Date(), t = now.getTime();
+  const jumped = force === true || (lastTick && t - lastTick > 3000);
+  lastTick = t;
+  if(current === 'today') tickToday(now, jumped);
+  else { lastUnitFloor = null; lastSec = null; }
+  if(current === 'fish') tickFish(now);
+  if(current === 'wish') tickWish(now);
+  checkReached(now);
+}
+updateEye();
+history.replaceState({tab:'today'}, '', '#today');
+showTab('today');
+setInterval(tick, 200);
+document.addEventListener('visibilitychange', () => { if(!document.hidden){ lastTick = 0; tick(true); } });
+</script>
+</body>
+</html>

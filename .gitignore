@@ -1,0 +1,22 @@
+# 构建产物
+build/
+dist/
+*.apk
+
+# 构建工具（按 README 自行下载）
+tools/*.jar
+
+# 签名密钥：不要上传，请自己另外备份
+signing/*.jks
+signing/*.keystore
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
