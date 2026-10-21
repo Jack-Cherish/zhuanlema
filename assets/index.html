@@ -101,7 +101,9 @@ body.friday .bar-fill{background:linear-gradient(90deg,#FF5A36,#FFC53D,#22B386,#
 .fish-picks{display:grid;gap:14px;margin:16px 0}
 .fish-pick{display:flex;align-items:center;gap:14px;text-align:left;border:2.5px solid var(--ink);border-radius:var(--r);box-shadow:var(--shadow);background:var(--card);padding:16px}
 .fish-pick:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
-.fish-pick .e{font-size:38px;width:56px;height:56px;display:grid;place-items:center;border-radius:16px;border:2.5px solid var(--ink)}
+.fish-pick .e{font-size:38px;width:56px;height:56px;display:grid;place-items:center;border-radius:16px;border:2.5px solid var(--ink);background:#FFF0B8;flex-shrink:0}
+.fish-pick .grow{flex:1;min-width:0}
+.fish-pick .edit{width:34px;height:34px;border-radius:11px;border:2px solid var(--ink);background:var(--card);display:grid;place-items:center;font-size:15px;flex-shrink:0}
 .fish-pick:nth-child(1) .e{background:#DDF3EA}
 .fish-pick:nth-child(2) .e{background:#E3EBFF}
 .fish-pick:nth-child(3) .e{background:#FFE4F0}
@@ -382,11 +384,7 @@ body.friday .bar-fill{background:linear-gradient(90deg,#FF5A36,#FFC53D,#22B386,#
   <p class="sub">摸鱼的每一秒，都是老板在付钱。</p>
 
   <div id="fishIdle">
-    <div class="fish-picks">
-      <button class="fish-pick" data-cat="toilet"><span class="e">🚽</span><span><div class="t">带薪如厕</div><div class="d">打工人最理直气壮的休息</div></span></button>
-      <button class="fish-pick" data-cat="phone"><span class="e">📱</span><span><div class="t">刷手机</div><div class="d">就看一眼，真的就一眼</div></span></button>
-      <button class="fish-pick" data-cat="daze"><span class="e">💭</span><span><div class="t">放空发呆</div><div class="d">表面在思考，其实在关机</div></span></button>
-    </div>
+    <div class="fish-picks" id="fishPicks"></div>
   </div>
 
   <div class="card fish-live hidden" id="fishLive">
@@ -465,6 +463,7 @@ body.friday .bar-fill{background:linear-gradient(90deg,#FF5A36,#FFC53D,#22B386,#
   <div class="card">
     <div class="sec-title">自选股<small>点一只就能买，闭眼也行</small></div>
     <div id="stkList"></div>
+    <button class="btn block ghost" id="stkAdd" style="margin-top:8px">＋ 自定义股票</button>
   </div>
 
   <button class="btn block" id="stkReset">清仓销户，拿 10 万重新开户</button>
@@ -578,7 +577,7 @@ const DEFAULTS = {
   richAsset:3000000000000, sound:true, hidden:false, saveRate:20
 };
 let S = Object.assign({}, DEFAULTS, store.get('settings', {}));
-let D = Object.assign({ fish:[], fishActive:null, ot:{active:null, log:{}}, rich:{}, wishes:[], wall:[], deposits:[], jar:null }, store.get('data', {}));
+let D = Object.assign({ fish:[], fishCats:[], stockCustom:[], fishActive:null, ot:{active:null, log:{}}, rich:{}, wishes:[], wall:[], deposits:[], jar:null }, store.get('data', {}));
 if(!D.ot) D.ot = {active:null, log:{}};
 const saveS = () => store.set('settings', S);
 const saveD = () => store.set('data', D);
@@ -920,28 +919,72 @@ $('otBtn').onclick = () => {
 
 /* ---------- 摸鱼 ---------- */
 const CATS = {
-  toilet:{e:'🚽', name:'带薪如厕', live:'带薪如厕中', verb:'如厕'},
-  phone: {e:'📱', name:'刷手机',   live:'带薪刷手机中', verb:'刷手机'},
-  daze:  {e:'💭', name:'放空发呆', live:'带薪发呆中',   verb:'发呆'}
+  toilet:{e:'🚽', name:'带薪如厕', live:'带薪如厕中', verb:'如厕', d:'打工人最理直气壮的休息'},
+  phone: {e:'📱', name:'刷手机',   live:'带薪刷手机中', verb:'刷手机', d:'就看一眼，真的就一眼'},
+  daze:  {e:'💭', name:'放空发呆', live:'带薪发呆中',   verb:'发呆', d:'表面在思考，其实在关机'}
 };
+const FISH_EMOJI = ['☕','🍵','🍜','🛒','🚶','💬','📰','🎮','😴','🧘','🚬','🐟'];
 const QUIPS = ['这钱赚得心安理得。','你没有在摸鱼，你是在给大脑充电。','适度摸鱼，有益身心。','老板不知道，但这个 App 知道。','工位会想你的，回去吧。'];
-document.querySelectorAll('.fish-pick').forEach(b => b.onclick = () => {
+// 自定义项目删除时只打标记，历史记录里还能显示原来的名字
+function cat(id){
+  if(CATS[id]) return CATS[id];
+  const c = D.fishCats.find(x => x.id === id);
+  return c ? {e:c.e, name:c.name, live:`带薪${c.name}中`, verb:c.name, d:c.d} : {e:'🐟', name:'摸鱼', live:'带薪摸鱼中', verb:'摸鱼'};
+}
+function renderFishPicks(){
+  const pick = (id, c, custom) => `<button class="fish-pick" data-cat="${id}"><span class="e">${esc(c.e)}</span>
+    <span class="grow"><div class="t">${esc(c.name)}</div><div class="d">${esc(c.d || '自定义摸鱼项目')}</div></span>${custom ? `<span class="edit" data-edit="${id}">✎</span>` : ''}</button>`;
+  $('fishPicks').innerHTML = Object.keys(CATS).map(id => pick(id, CATS[id], false)).join('')
+    + D.fishCats.filter(c => !c.deleted).map(c => pick(c.id, c, true)).join('')
+    + '<button class="btn block ghost" id="fishAdd">＋ 自定义摸鱼项目</button>';
+}
+$('fishPicks').addEventListener('click', ev => {
+  const ed = ev.target.closest('[data-edit]');
+  if(ed) return fishCatSheet(ed.dataset.edit);
+  if(ev.target.closest('#fishAdd')) return fishCatSheet();
+  const b = ev.target.closest('[data-cat]'); if(!b) return;
   D.fishActive = {cat:b.dataset.cat, start:Date.now()}; saveD();
   unlockAudio(); renderFish(); tick(true);
 });
+function fishCatSheet(id){
+  const old = id ? D.fishCats.find(x => x.id === id) : null;
+  let emoji = old ? old.e : FISH_EMOJI[0];
+  const close = openSheet(`<div class="e" id="fcE"></div><h3>${old ? '编辑摸鱼项目' : '自定义摸鱼项目'}</h3>
+    <input class="field" id="fcName" maxlength="8" placeholder="名字，比如：喝咖啡" autocomplete="off" value="${old ? esc(old.name) : ''}">
+    <input class="field" id="fcDesc" maxlength="16" placeholder="一句话描述（可不填）" autocomplete="off" value="${old ? esc(old.d || '') : ''}">
+    <div class="emoji-pick" id="fcPick">${FISH_EMOJI.map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>
+    <p class="warn hidden" id="fcWarn"></p>
+    <div class="btns"><button class="btn" id="fcCancel">取消</button><button class="btn primary" id="fcOk">保存</button></div>
+    ${old ? '<button class="btn ghost block" id="fcDel" style="margin-top:10px">删除这个项目</button>' : ''}`);
+  const setEmoji = e => { emoji = e; $('fcE').textContent = e; document.querySelectorAll('#fcPick button').forEach(b => b.classList.toggle('on', b.dataset.e === e)); };
+  setEmoji(emoji);
+  $('fcPick').onclick = ev => { const b = ev.target.closest('button'); if(b) setEmoji(b.dataset.e); };
+  $('fcCancel').onclick = close;
+  $('fcOk').onclick = () => {
+    const name = $('fcName').value.trim(), d = $('fcDesc').value.trim();
+    if(!name){ $('fcWarn').textContent = '给它起个名字'; $('fcWarn').classList.remove('hidden'); return; }
+    if(old) Object.assign(old, {e:emoji, name, d});
+    else D.fishCats.push({id:'c' + newId(), e:emoji, name, d});
+    saveD(); close(); renderFish(); toast(`${emoji} ${name} 已${old ? '保存' : '加入摸鱼清单'}`);
+  };
+  if(old) $('fcDel').onclick = () => {
+    if(D.fishActive && D.fishActive.cat === id){ toast('正在摸这条鱼呢，摸完再删'); return; }
+    old.deleted = true; saveD(); close(); renderFish(); toast('已删除，之前的记录还在');
+  };
+}
 $('fishStop').onclick = () => {
   const a = D.fishActive; if(!a) return;
   const end = Date.now(), sec = (end - a.start)/1000;
   const earned = paidSecondsBetween(a.start, end) * perSecond();
   D.fish.push({cat:a.cat, start:a.start, end, earned, jar: D.jar ? earned * rate() : 0});
   D.fishActive = null; saveD();
-  const c = CATS[a.cat];
+  const c = cat(a.cat);
   if(earned > 0){
     ding();
-    modal({emoji:c.e, title:`本次带薪${c.verb} ${sec < 1 ? '不到 1 秒' : dur(sec)}，公司为此支付 ${masked(fix(earned))} 元。`,
+    modal({emoji:esc(c.e), title:`本次带薪${esc(c.verb)} ${sec < 1 ? '不到 1 秒' : dur(sec)}，公司为此支付 ${masked(fix(earned))} 元。`,
            text: QUIPS[Math.floor(Math.random()*QUIPS.length)], ok:'回去搬砖'});
   } else {
-    modal({emoji:c.e, title:`这次${c.verb}了 ${dur(sec)}`, text:'不过发生在非工作时间，老板不买单 🙃', ok:'行吧'});
+    modal({emoji:esc(c.e), title:`这次${esc(c.verb)}了 ${dur(sec)}`, text:'不过发生在非工作时间，老板不买单 🙃', ok:'行吧'});
   }
   renderFish(); tick(true);
 };
@@ -949,13 +992,14 @@ function renderFish(){
   const a = D.fishActive;
   $('fishIdle').classList.toggle('hidden', !!a);
   $('fishLive').classList.toggle('hidden', !a);
-  if(a){ $('fishLiveEmoji').textContent = CATS[a.cat].e; $('fishLiveName').textContent = CATS[a.cat].live; }
+  renderFishPicks();
+  if(a){ $('fishLiveEmoji').textContent = cat(a.cat).e; $('fishLiveName').textContent = cat(a.cat).live; }
   const now = new Date(), tk = dateKey(now);
   const today = D.fish.filter(f => dateKey(new Date(f.start)) === tk).reverse();
   let ts = 0, tm = 0; today.forEach(f => { ts += (f.end - f.start)/1000; tm += f.earned; });
   $('fishTodaySum').textContent = today.length ? `${dur(ts)} · ${masked(yuan(tm))}` : '';
   $('fishTodayList').innerHTML = today.length
-    ? today.map(f => `<li><span class="e">${CATS[f.cat].e}</span><span class="grow">${CATS[f.cat].name} ${dur((f.end - f.start)/1000)}<div class="when">${hhmm(f.start)} – ${hhmm(f.end)}</div></span><span class="amt num">${masked(yuan(f.earned))}</span></li>`).join('')
+    ? today.map(f => `<li><span class="e">${esc(cat(f.cat).e)}</span><span class="grow">${esc(cat(f.cat).name)} ${dur((f.end - f.start)/1000)}<div class="when">${hhmm(f.start)} – ${hhmm(f.end)}</div></span><span class="amt num">${masked(yuan(f.earned))}</span></li>`).join('')
     : '<li class="empty">今天还没摸过鱼。是不是太认真了？</li>';
   // monthly report
   const ym = tk.slice(0, 7), month = D.fish.filter(f => dateKey(new Date(f.start)).slice(0, 7) === ym);
@@ -967,7 +1011,7 @@ function renderFish(){
   $('reportBody').innerHTML =
     `<div class="sub" style="font-weight:700;color:var(--ink)">本月你从工位上“回收”了</div>
      <div class="big num">${masked(yuan(mm))}</div>
-     <div class="stats"><div>总时长<b>${dur(ms).split(' ').slice(0, 2).join(' ')}</b></div><div>次数<b>${month.length} 次</b></div><div>最爱<b>${CATS[fav].e}</b></div></div>
+     <div class="stats"><div>总时长<b>${dur(ms).split(' ').slice(0, 2).join(' ')}</b></div><div>次数<b>${month.length} 次</b></div><div>最爱<b>${esc(cat(fav).e)}</b></div></div>
      <p>相当于白赚了 ${S.hidden ? '**' : (mm / S.unitPrice).toFixed(1)} ${S.unitWord}${S.unitName} ${S.unitEmoji}</p>`;
 }
 function tickFish(now){
@@ -1438,14 +1482,18 @@ const STOCKS = [
 const TAPE = ['📢 今日股评：闭眼买，睁眼赚。','📢 分析师：本市场没有绿色，只有更红。','📢 温馨提示：股市有风险，但这里没有。','📢 主力资金正在流入你的账户。','📢 今天的你，跑赢了 99% 的基金经理。','📢 散户情绪指数：极度乐观，且完全合理。','📢 专家建议：别看了，反正是涨。','📢 老板画饼食品再创新高，饼越画越大。'];
 const SELL_QUIPS = ['落袋为安，又是稳赚的一天。','巴菲特看了都说好。','这波操作，可以写进简历。','止盈成功，韭菜？不存在的。','卖飞了也是赚，这就是稳赚股市。'];
 const STOCK_CASH = 100000;
+const STOCK_EMOJI = ['🚀','💎','🐂','🍗','🍺','☕','🐱','🐶','🎮','🏠','🌙','💡'];
+const SPEEDS = [['稳健', 0.7], ['上头', 1.3], ['起飞', 2.2]];
+const allStocks = () => STOCKS.concat(D.stockCustom);
+const findStock = id => allStocks().find(x => x.id === id);
 function newStock(){
   const px = {}, hist = {};
-  STOCKS.forEach(s => { px[s.id] = s.p; hist[s.id] = [s.p]; });
-  return {cash:STOCK_CASH, pos:{}, px, hist, total:[STOCK_CASH], t:Date.now(), day:null};
+  allStocks().forEach(s => { px[s.id] = s.p; hist[s.id] = [s.p]; });
+  return {cash:STOCK_CASH, pos:{}, px, hist, total:[STOCK_CASH], t:Date.now(), day:{key:dateKey(new Date()), base:STOCK_CASH, open:Object.assign({}, px)}};
 }
 if(!D.stock) D.stock = newStock();
 const held = id => (D.stock.pos[id] || {n:0, cost:0});
-const stkValue = () => STOCKS.reduce((a, s) => a + held(s.id).n * D.stock.px[s.id], 0);
+const stkValue = () => allStocks().reduce((a, s) => a + held(s.id).n * D.stock.px[s.id], 0);
 const stkTotal = () => D.stock.cash + stkValue();
 const plus = v => S.hidden ? '+¥***' : '+' + yuan(Math.max(0, v));
 const upPct = (a, b) => '+' + Math.max(0, (a / b - 1) * 100).toFixed(2) + '%';
@@ -1460,11 +1508,11 @@ function stockStep(now){
   const st = D.stock, t = now.getTime(), gap = t - st.t;
   if(gap > 600000){
     // 关掉 App 就是休市，回来时统一高开一次
-    STOCKS.forEach(s => st.px[s.id] *= 1.01 + Math.random() * 0.05);
+    allStocks().forEach(s => st.px[s.id] *= 1.01 + Math.random() * 0.05);
     stkGapNote = true;
   } else {
     const dt = Math.max(0, Math.min(5, gap / 1000));
-    STOCKS.forEach(s => {
+    allStocks().forEach(s => {
       let g = dt * (0.00005 + Math.random() * 0.0004) * s.v;
       if(Math.random() < 0.01 * dt){ g += 0.01 + Math.random() * 0.02; stkFlash[s.id] = true; }
       st.px[s.id] *= 1 + g;
@@ -1475,15 +1523,15 @@ function stockStep(now){
   if(!st.day || st.day.key !== k) st.day = {key:k, base:stkTotal(), open:Object.assign({}, st.px)};
   if(t - stkSample >= 3000){
     stkSample = t;
-    STOCKS.forEach(s => { const h = st.hist[s.id]; h.push(st.px[s.id]); if(h.length > 40) h.shift(); });
+    allStocks().forEach(s => { const h = st.hist[s.id]; h.push(st.px[s.id]); if(h.length > 40) h.shift(); });
     st.total.push(stkTotal()); if(st.total.length > 60) st.total.shift();
   }
   if(t - stkSaved >= 5000){ stkSaved = t; saveD(); }
 }
 
 function renderStock(){
-  $('stkList').innerHTML = STOCKS.map(s => `<div class="stk" data-stk="${s.id}"><div class="e">${s.e}</div>
-    <div class="info"><div class="name">${s.name} <small>${s.code}</small></div><div class="hold" id="sh-${s.id}"></div></div>
+  $('stkList').innerHTML = allStocks().map(s => `<div class="stk" data-stk="${s.id}"><div class="e">${esc(s.e)}</div>
+    <div class="info"><div class="name">${esc(s.name)} <small>${esc(s.code)}</small></div><div class="hold" id="sh-${s.id}"></div></div>
     <svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline id="sl-${s.id}" points="" vector-effect="non-scaling-stroke"/></svg>
     <div class="px num" id="sp-${s.id}"><b></b><span class="up"></span></div></div>`).join('');
   stkTapeT = 0;
@@ -1496,7 +1544,7 @@ function paintStock(){
   $('stkRate').innerHTML = `<span>今日 <b>${plus(tot - st.day.base)}</b></span><span>累计 <b>${plus(all)}（${upPct(tot, STOCK_CASH)}）</b></span><span>可用 ${masked(yuan(st.cash))}</span>`;
   $('stkLine').setAttribute('points', spark(st.total));
   if(Date.now() - stkTapeT > 10000){ stkTapeT = Date.now(); $('stkTape').textContent = TAPE[Math.floor(Math.random() * TAPE.length)]; }
-  STOCKS.forEach(s => {
+  allStocks().forEach(s => {
     const px = st.px[s.id], h = held(s.id), el = $('sp-' + s.id);
     el.firstChild.textContent = px.toFixed(2);
     el.lastChild.textContent = upPct(px, st.day.open[s.id] || px);
@@ -1514,10 +1562,12 @@ function tickStock(now){
 let tradeId = null;
 function openTrade(id){
   tradeId = id;
-  const s = STOCKS.find(x => x.id === id);
-  openSheet(`<div class="e">${s.e}</div><h3>${s.name} <small>${s.code}</small></h3>
+  const s = findStock(id);
+  openSheet(`<div class="e">${esc(s.e)}</div><h3>${esc(s.name)} <small>${esc(s.code)}</small></h3>
     <div class="trade-px num" id="tdPrice"></div><p id="tdInfo"></p>
-    <div class="trade-btns" id="tdBtns"><button class="btn" data-td="one">买 1 手</button><button class="btn yolk" data-td="all">全仓梭哈</button><button class="btn primary" data-td="sell">全部卖出，落袋为安</button></div>`);
+    <div class="trade-btns" id="tdBtns"><button class="btn" data-td="one">买 1 手</button><button class="btn yolk" data-td="all">全仓梭哈</button><button class="btn primary" data-td="sell">全部卖出，落袋为安</button></div>
+    ${s.custom ? '<button class="btn ghost block" id="tdEdit" style="margin-top:10px">✎ 编辑或删除这只股票</button>' : ''}`);
+  if(s.custom) $('tdEdit').onclick = () => stockSheet(id);
   $('tdBtns').onclick = ev => { const b = ev.target.closest('button'); if(b && !b.disabled) trade(b.dataset.td); };
   paintTrade();
 }
@@ -1534,7 +1584,7 @@ function paintTrade(){
   btns[2].disabled = !h.n;
 }
 function trade(act){
-  const st = D.stock, s = STOCKS.find(x => x.id === tradeId), px = st.px[tradeId], h = held(tradeId);
+  const st = D.stock, s = findStock(tradeId), px = st.px[tradeId], h = held(tradeId);
   if(act === 'sell'){
     const gain = (px - h.cost) * h.n, w = asWork(gain);
     st.cash += px * h.n; delete st.pos[tradeId];
@@ -1550,7 +1600,49 @@ function trade(act){
   }
   saveD(); paintStock(); paintTrade();
 }
+function stockSheet(id){
+  const old = id ? findStock(id) : null;
+  let emoji = old ? old.e : STOCK_EMOJI[0], v = old ? old.v : SPEEDS[1][1];
+  const close = openSheet(`<div class="e" id="scE"></div><h3>${old ? '编辑股票' : '自定义股票'}</h3>
+    <input class="field" id="scName" maxlength="8" placeholder="公司名，比如：周末永动机" autocomplete="off" value="${old ? esc(old.name) : ''}">
+    <input class="field" id="scCode" maxlength="6" placeholder="股票代码（可不填）" autocomplete="off" value="${old ? esc(old.code) : ''}">
+    ${old ? '' : '<div class="field money-field"><span>¥</span><input id="scPrice" type="number" inputmode="decimal" min="0" placeholder="开盘价（默认 10 元）"></div>'}
+    <div class="emoji-pick" id="scPick">${STOCK_EMOJI.map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>
+    <div class="sec-title" style="margin:0">涨势</div>
+    <div class="rate-chips" id="scSpeed" style="margin:8px 0 14px">${SPEEDS.map(([t, x]) => `<button data-v="${x}">${t}</button>`).join('')}</div>
+    <p class="warn hidden" id="scWarn"></p>
+    <div class="btns"><button class="btn" id="scCancel">取消</button><button class="btn primary" id="scOk">${old ? '保存' : '上市'}</button></div>
+    ${old ? '<button class="btn ghost block" id="scDel" style="margin-top:10px">退市（持仓按现价卖出）</button>' : ''}`);
+  const setEmoji = e => { emoji = e; $('scE').textContent = e; document.querySelectorAll('#scPick button').forEach(b => b.classList.toggle('on', b.dataset.e === e)); };
+  const setSpeed = x => { v = x; document.querySelectorAll('#scSpeed button').forEach(b => b.classList.toggle('on', +b.dataset.v === x)); };
+  setEmoji(emoji); setSpeed(v);
+  $('scPick').onclick = ev => { const b = ev.target.closest('button'); if(b) setEmoji(b.dataset.e); };
+  $('scSpeed').onclick = ev => { const b = ev.target.closest('button'); if(b) setSpeed(+b.dataset.v); };
+  $('scCancel').onclick = close;
+  $('scOk').onclick = () => {
+    const name = $('scName').value.trim(), code = $('scCode').value.trim().toUpperCase() || 'DIY';
+    const warn = m => { $('scWarn').textContent = m; $('scWarn').classList.remove('hidden'); };
+    if(!name) return warn('给公司起个名字');
+    if(old){ Object.assign(old, {e:emoji, name, code, v}); saveD(); close(); renderStock(); toast(`${emoji} ${name} 已更新`); return; }
+    const raw = $('scPrice').value, p = raw === '' ? 10 : parseFloat(raw);
+    if(!isFinite(p) || p <= 0) return warn('开盘价要大于 0');
+    const s = {id:'s' + newId(), e:emoji, name, code, p:Math.round(p * 100) / 100, v, custom:true}, st = D.stock;
+    D.stockCustom.push(s);
+    st.px[s.id] = s.p; st.hist[s.id] = [s.p];
+    if(st.day) st.day.open[s.id] = s.p;
+    saveD(); close(); renderStock(); toast(`${emoji} ${name} 上市了，开盘就涨 🚀`);
+  };
+  if(old) $('scDel').onclick = () => {
+    const st = D.stock, h = held(id), gain = (st.px[id] - h.cost) * h.n;
+    if(h.n) st.cash += st.px[id] * h.n;
+    delete st.pos[id]; delete st.px[id]; delete st.hist[id];
+    D.stockCustom = D.stockCustom.filter(x => x.id !== id);
+    saveD(); close(); renderStock();
+    toast(h.n ? `${old.name} 退市了，持仓已卖出，赚了 ${plus(gain).slice(1)}` : `${old.name} 已退市`);
+  };
+}
 $('stkList').addEventListener('click', ev => { const r = ev.target.closest('[data-stk]'); if(r) openTrade(r.dataset.stk); });
+$('stkAdd').onclick = () => stockSheet();
 $('stkReset').onclick = () => modal({emoji:'🏦', title:'清仓销户，重新开户？', text:'持仓和收益都会清空，账户恢复成 10 万本金。', ok:'重新开户', cancel:'不了',
   onOk: () => { D.stock = newStock(); saveD(); renderStock(); toast('新账户已开，10 万到账 💰'); }});
 
