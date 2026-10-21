@@ -152,6 +152,36 @@ body.friday .bar-fill{background:linear-gradient(90deg,#FF5A36,#FFC53D,#22B386,#
 .qty button:disabled{opacity:.3;box-shadow:none}
 .qty span{min-width:24px;text-align:center;font-weight:900;font-size:16px}
 
+/* stock */
+.stock-hero{background:var(--ink);color:#fff}
+.stock-hero .hero-label{color:var(--yolk)}
+.stock-hero .money{font-size:clamp(36px,12vw,56px)}
+.stock-hero .rate b{color:#FF7A5C}
+.spark{display:block;width:100%;height:56px;margin-top:12px;overflow:visible}
+.spark polyline,.stk svg polyline{fill:none;stroke:#FF7A5C;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.tape{background:#FFE3DA;font-weight:800;font-size:14px;line-height:1.5;padding:12px 16px}
+.stk{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:2px dashed var(--soft)}
+.stk:last-child{border-bottom:0}
+.stk:active{opacity:.6}
+.stk .e{font-size:24px;width:40px;height:40px;display:grid;place-items:center;background:var(--soft);border-radius:12px;flex-shrink:0}
+.stk .info{flex:1;min-width:0}
+.stk .name{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stk .name small{font-size:11px;color:var(--muted);font-weight:700}
+.stk .hold{font-size:12px;color:var(--muted);font-weight:700;margin-top:2px}
+.stk .hold b{color:var(--accent)}
+.stk svg{width:52px;height:24px;flex-shrink:0;overflow:visible}
+.stk svg polyline{stroke:var(--accent);stroke-width:2}
+.stk .px{text-align:right;flex-shrink:0;min-width:72px}
+.stk .px b{display:block;font-size:16px;font-weight:900}
+.up{display:inline-block;background:var(--accent);color:#fff;border-radius:8px;padding:2px 6px;font-size:12px;font-weight:900}
+.stk .px.flash b{animation:flash .7s}
+@keyframes flash{from{color:var(--accent);transform:scale(1.12)}}
+.trade-px{font-size:30px;font-weight:900;margin:2px 0 10px}
+.trade-px .up{vertical-align:middle;margin-left:4px}
+.trade-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.trade-btns .btn:last-child{grid-column:1 / -1}
+.trade-btns .btn:disabled{opacity:.35;box-shadow:none}
+
 /* settings */
 .form .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:2px dashed var(--soft);font-weight:700;font-size:15px}
 .form .row:last-of-type{border-bottom:0}
@@ -418,6 +448,28 @@ body.friday .bar-fill{background:linear-gradient(90deg,#FF5A36,#FFC53D,#22B386,#
   </div>
 </section>
 
+<!-- ============ 炒股 ============ -->
+<section class="page hidden" id="page-stock">
+  <h2 class="h">稳赚股市</h2>
+  <p class="sub">这里的股票只涨不跌。亏钱的那个世界，明天再说。</p>
+
+  <div class="card stock-hero">
+    <div class="hero-label">总资产</div>
+    <div class="money num" id="stkTotal">¥0</div>
+    <div class="rate num" id="stkRate"></div>
+    <svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none"><polyline id="stkLine" points="" vector-effect="non-scaling-stroke"/></svg>
+  </div>
+
+  <div class="card tape" id="stkTape"></div>
+
+  <div class="card">
+    <div class="sec-title">自选股<small>点一只就能买，闭眼也行</small></div>
+    <div id="stkList"></div>
+  </div>
+
+  <button class="btn block" id="stkReset">清仓销户，拿 10 万重新开户</button>
+</section>
+
 <!-- ============ 首富 ============ -->
 <section class="page hidden" id="page-rich">
   <h2 class="h">首富的一天</h2>
@@ -502,6 +554,7 @@ body.friday .bar-fill{background:linear-gradient(90deg,#FF5A36,#FFC53D,#22B386,#
   <button data-tab="today" class="on"><span>💰</span>今日</button>
   <button data-tab="fish"><span>🐟</span>摸鱼</button>
   <button data-tab="wish"><span>🐷</span>愿望</button>
+  <button data-tab="stock"><span>📈</span>炒股</button>
   <button data-tab="rich"><span>👑</span>首富</button>
   <button data-tab="settings"><span>⚙️</span>设置</button>
 </nav>
@@ -687,6 +740,7 @@ function showTab(tab){
   if(tab === 'fish') renderFish();
   if(tab === 'rich') renderRich();
   if(tab === 'wish') renderWish();
+  if(tab === 'stock') renderStock();
   if(tab === 'settings') fillForm();
   tick(true);
 }
@@ -1369,6 +1423,137 @@ $('richList').addEventListener('click', ev => {
 $('richReset').onclick = () => modal({emoji:'🛏️', title:'一觉醒来，重新当首富？', text:'购物清单会清空，余额恢复。', ok:'再花一遍', cancel:'不了',
   onOk: () => { D.rich = {}; saveD(); renderRich(); toast('钱又回来了 💰'); }});
 
+/* ---------- 炒股 ---------- */
+// v = 涨势快慢；价格只涨不跌，偶尔突然拉升
+const STOCKS = [
+  {id:'moyu',   e:'🐟', name:'摸鱼科技',     code:'MOYU', p:18.80, v:1.2},
+  {id:'wc',     e:'🚽', name:'带薪如厕控股', code:'WC',   p:6.66,  v:1.5},
+  {id:'xiaban', e:'🏃', name:'准点下班集团', code:'XB',   p:17.30, v:1},
+  {id:'naicha', e:'🧋', name:'奶茶能源',     code:'NC',   p:12.50, v:1.1},
+  {id:'friday', e:'🎉', name:'周五传媒',     code:'FRI',  p:35.20, v:0.9},
+  {id:'bonus',  e:'🧧', name:'年终奖银行',   code:'NZJ',  p:52.00, v:0.7},
+  {id:'tang',   e:'🛋️', name:'躺平地产',     code:'TP',   p:8.88,  v:1.3},
+  {id:'bing',   e:'🫓', name:'老板画饼食品', code:'BING', p:3.14,  v:2}
+];
+const TAPE = ['📢 今日股评：闭眼买，睁眼赚。','📢 分析师：本市场没有绿色，只有更红。','📢 温馨提示：股市有风险，但这里没有。','📢 主力资金正在流入你的账户。','📢 今天的你，跑赢了 99% 的基金经理。','📢 散户情绪指数：极度乐观，且完全合理。','📢 专家建议：别看了，反正是涨。','📢 老板画饼食品再创新高，饼越画越大。'];
+const SELL_QUIPS = ['落袋为安，又是稳赚的一天。','巴菲特看了都说好。','这波操作，可以写进简历。','止盈成功，韭菜？不存在的。','卖飞了也是赚，这就是稳赚股市。'];
+const STOCK_CASH = 100000;
+function newStock(){
+  const px = {}, hist = {};
+  STOCKS.forEach(s => { px[s.id] = s.p; hist[s.id] = [s.p]; });
+  return {cash:STOCK_CASH, pos:{}, px, hist, total:[STOCK_CASH], t:Date.now(), day:null};
+}
+if(!D.stock) D.stock = newStock();
+const held = id => (D.stock.pos[id] || {n:0, cost:0});
+const stkValue = () => STOCKS.reduce((a, s) => a + held(s.id).n * D.stock.px[s.id], 0);
+const stkTotal = () => D.stock.cash + stkValue();
+const plus = v => S.hidden ? '+¥***' : '+' + yuan(Math.max(0, v));
+const upPct = (a, b) => '+' + Math.max(0, (a / b - 1) * 100).toFixed(2) + '%';
+const asWork = v => perSecond() > 0 && isFinite(perSecond()) ? workLen(v / perSecond(), true) : '';
+function spark(arr){
+  const lo = Math.min(...arr), hi = Math.max(...arr), r = hi - lo || 1, n = Math.max(1, arr.length - 1);
+  return arr.map((v, i) => (i / n * 100).toFixed(1) + ',' + (38 - (v - lo) / r * 36).toFixed(1)).join(' ');
+}
+
+let stkSample = 0, stkSaved = 0, stkTapeT = 0, stkGapNote = false, stkFlash = {};
+function stockStep(now){
+  const st = D.stock, t = now.getTime(), gap = t - st.t;
+  if(gap > 600000){
+    // 关掉 App 就是休市，回来时统一高开一次
+    STOCKS.forEach(s => st.px[s.id] *= 1.01 + Math.random() * 0.05);
+    stkGapNote = true;
+  } else {
+    const dt = Math.max(0, Math.min(5, gap / 1000));
+    STOCKS.forEach(s => {
+      let g = dt * (0.00005 + Math.random() * 0.0004) * s.v;
+      if(Math.random() < 0.01 * dt){ g += 0.01 + Math.random() * 0.02; stkFlash[s.id] = true; }
+      st.px[s.id] *= 1 + g;
+    });
+  }
+  st.t = t;
+  const k = dateKey(now);
+  if(!st.day || st.day.key !== k) st.day = {key:k, base:stkTotal(), open:Object.assign({}, st.px)};
+  if(t - stkSample >= 3000){
+    stkSample = t;
+    STOCKS.forEach(s => { const h = st.hist[s.id]; h.push(st.px[s.id]); if(h.length > 40) h.shift(); });
+    st.total.push(stkTotal()); if(st.total.length > 60) st.total.shift();
+  }
+  if(t - stkSaved >= 5000){ stkSaved = t; saveD(); }
+}
+
+function renderStock(){
+  $('stkList').innerHTML = STOCKS.map(s => `<div class="stk" data-stk="${s.id}"><div class="e">${s.e}</div>
+    <div class="info"><div class="name">${s.name} <small>${s.code}</small></div><div class="hold" id="sh-${s.id}"></div></div>
+    <svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline id="sl-${s.id}" points="" vector-effect="non-scaling-stroke"/></svg>
+    <div class="px num" id="sp-${s.id}"><b></b><span class="up"></span></div></div>`).join('');
+  stkTapeT = 0;
+  paintStock();
+  if(stkGapNote){ stkGapNote = false; toast('休市期间利好不断，今天全线高开 🚀'); }
+}
+function paintStock(){
+  const st = D.stock, tot = stkTotal(), all = tot - STOCK_CASH;
+  $('stkTotal').textContent = masked(yuan(tot));
+  $('stkRate').innerHTML = `<span>今日 <b>${plus(tot - st.day.base)}</b></span><span>累计 <b>${plus(all)}（${upPct(tot, STOCK_CASH)}）</b></span><span>可用 ${masked(yuan(st.cash))}</span>`;
+  $('stkLine').setAttribute('points', spark(st.total));
+  if(Date.now() - stkTapeT > 10000){ stkTapeT = Date.now(); $('stkTape').textContent = TAPE[Math.floor(Math.random() * TAPE.length)]; }
+  STOCKS.forEach(s => {
+    const px = st.px[s.id], h = held(s.id), el = $('sp-' + s.id);
+    el.firstChild.textContent = px.toFixed(2);
+    el.lastChild.textContent = upPct(px, st.day.open[s.id] || px);
+    $('sh-' + s.id).innerHTML = h.n ? `持有 ${h.n} 股 · 赚 <b>${plus((px - h.cost) * h.n)}</b>` : '未持有';
+    $('sl-' + s.id).setAttribute('points', spark(st.hist[s.id]));
+    if(stkFlash[s.id]){ stkFlash[s.id] = false; el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  });
+}
+function tickStock(now){
+  stockStep(now);
+  if(current === 'stock') paintStock();
+  paintTrade();
+}
+
+let tradeId = null;
+function openTrade(id){
+  tradeId = id;
+  const s = STOCKS.find(x => x.id === id);
+  openSheet(`<div class="e">${s.e}</div><h3>${s.name} <small>${s.code}</small></h3>
+    <div class="trade-px num" id="tdPrice"></div><p id="tdInfo"></p>
+    <div class="trade-btns" id="tdBtns"><button class="btn" data-td="one">买 1 手</button><button class="btn yolk" data-td="all">全仓梭哈</button><button class="btn primary" data-td="sell">全部卖出，落袋为安</button></div>`);
+  $('tdBtns').onclick = ev => { const b = ev.target.closest('button'); if(b && !b.disabled) trade(b.dataset.td); };
+  paintTrade();
+}
+function paintTrade(){
+  if(!tradeId || $('modal').classList.contains('hidden') || !$('tdPrice')) return;
+  const st = D.stock, px = st.px[tradeId], h = held(tradeId), lot = px * 100;
+  $('tdPrice').innerHTML = `¥${px.toFixed(2)}<span class="up">${upPct(px, st.day.open[tradeId] || px)}</span>`;
+  const gain = (px - h.cost) * h.n, w = asWork(gain);
+  $('tdInfo').innerHTML = h.n
+    ? `持有 <b>${h.n}</b> 股，成本 ¥${h.cost.toFixed(2)}<br>已经赚了 <b>${plus(gain)}</b>${w ? `，相当于上了 ${w}` : ''}`
+    : `可用资金 ${masked(yuan(st.cash))}<br>1 手 = 100 股 = ${yuan(lot)}`;
+  const btns = $('tdBtns').children;
+  btns[0].disabled = btns[1].disabled = st.cash < lot;
+  btns[2].disabled = !h.n;
+}
+function trade(act){
+  const st = D.stock, s = STOCKS.find(x => x.id === tradeId), px = st.px[tradeId], h = held(tradeId);
+  if(act === 'sell'){
+    const gain = (px - h.cost) * h.n, w = asWork(gain);
+    st.cash += px * h.n; delete st.pos[tradeId];
+    toast(`${SELL_QUIPS[Math.floor(Math.random() * SELL_QUIPS.length)]}赚了 ${plus(gain).slice(1)}${w ? `，顶 ${w}` : ''}`);
+    ding();
+    if(gain >= 1000) confetti(['📈','💰','🧧','✨']);
+  } else {
+    const lots = act === 'all' ? Math.floor(st.cash / (px * 100)) : 1, n = lots * 100;
+    if(!lots) return;
+    st.pos[tradeId] = {n:h.n + n, cost:(h.cost * h.n + px * n) / (h.n + n)};
+    st.cash -= px * n;
+    toast(act === 'all' ? `梭哈 ${s.name} ${n} 股！稳了 🚀` : `买入 ${s.name} 100 股，坐等上涨 📈`);
+  }
+  saveD(); paintStock(); paintTrade();
+}
+$('stkList').addEventListener('click', ev => { const r = ev.target.closest('[data-stk]'); if(r) openTrade(r.dataset.stk); });
+$('stkReset').onclick = () => modal({emoji:'🏦', title:'清仓销户，重新开户？', text:'持仓和收益都会清空，账户恢复成 10 万本金。', ok:'重新开户', cancel:'不了',
+  onOk: () => { D.stock = newStock(); saveD(); renderStock(); toast('新账户已开，10 万到账 💰'); }});
+
 /* ---------- 设置 ---------- */
 const PRESETS = [
   {unitEmoji:'🧋', unitName:'奶茶',   unitWord:'杯', unitPrice:20},
@@ -1449,7 +1634,7 @@ $('clearWishes').onclick = () => modal({emoji:'🐷', title:'清空愿望和存�
 
 /* ---------- eye / welcome ---------- */
 function updateEye(){ $('eyeBtn').textContent = S.hidden ? '🙈' : '👀'; lastCents = null; }
-$('eyeBtn').onclick = () => { S.hidden = !S.hidden; saveS(); updateEye(); if(current === 'settings') fillForm(); if(current === 'fish') renderFish(); if(current === 'rich') renderRich(); if(current === 'wish') renderWish(); tick(true); toast(S.hidden ? '金额已隐藏 🙈' : '金额已显示 👀'); };
+$('eyeBtn').onclick = () => { S.hidden = !S.hidden; saveS(); updateEye(); if(current === 'settings') fillForm(); if(current === 'fish') renderFish(); if(current === 'rich') renderRich(); if(current === 'wish') renderWish(); if(current === 'stock') renderStock(); tick(true); toast(S.hidden ? '金额已隐藏 🙈' : '金额已显示 👀'); };
 if(!store.get('onboarded', false)) $('welcome').classList.remove('hidden');
 $('goSettings').onclick = () => { store.set('onboarded', true); $('welcome').classList.add('hidden'); go('settings'); };
 $('dismissWelcome').onclick = () => { store.set('onboarded', true); $('welcome').classList.add('hidden'); };
@@ -1465,6 +1650,7 @@ function tick(force){
   else { lastUnitFloor = null; lastSec = null; }
   if(current === 'fish') tickFish(now);
   if(current === 'wish') tickWish(now);
+  tickStock(now);
   checkReached(now);
 }
 updateEye();
